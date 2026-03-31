@@ -1699,50 +1699,45 @@ canvas.on('selection:cleared', function() { clearGuideLines(); });
 
 async function loadTemplateList() {
     try {
-        // Python's http.server returns a directory listing as HTML when no index.html is present
-        const resp = await fetch('./templates/');
-        const html = await resp.text();
-        // Parse anchor tags pointing to .json files
-        // The href is already percent-encoded by the server — keep it as-is for fetch
-        const matches = [...html.matchAll(/href="([^"]+\.json)"/gi)];
-        return matches.map(m => {
-            const rawHref = m[1]; // e.g. "Mi%20Dise%C3%B1o.json" — already encoded
-            // Strip path prefix if any
-            const rawBasename = rawHref.split('/').pop();
-            // Human-readable name = decode, then strip .json
-            const name = decodeURIComponent(rawBasename.replace(/\.json$/i, ''));
-            const filename = decodeURIComponent(rawBasename); // decoded filename for display
-            return { name, filename, href: rawBasename }; // keep raw href for fetch
-        });
+        const resp = await fetch('./templates/all.json');
+        if (!resp.ok) {
+            console.warn('[Templates] all.json not found or HTTP error');
+            return [];
+        }
+        
+        const templates = await resp.json();
+        if (!Array.isArray(templates)) {
+            console.error('[Templates] all.json did not return an array');
+            return [];
+        }
+        return templates;
     } catch (e) {
-        console.warn('[Templates] Could not load template list:', e);
+        console.warn('[Templates] Could not load templates from all.json:', e);
         return [];
     }
 }
 
 async function applyTemplateFromFile(href) {
-    // `href` is the raw (already percent-encoded) basename from the directory listing
     try {
         const resp = await fetch('./templates/' + href);
         if (!resp.ok) throw new Error('HTTP ' + resp.status);
         const jsonText = await resp.text();
-        // Re-use the existing import logic (which expects a JSON string)
         importProjectFromJSON(jsonText);
         document.getElementById('templatesModal').classList.add('hidden');
     } catch (e) {
         console.error('[Templates] Failed to load template:', href, e);
-        alert('No se pudo cargar la plantilla: ' + decodeURIComponent(href));
+        alert('Could not load template: ' + decodeURIComponent(href) + '\\n\\nMake sure it exists in the templates folder.');
     }
 }
 
 async function renderTemplateGrid() {
     var grid = document.getElementById('templateGrid');
-    grid.innerHTML = '<p class="text-slate-500 text-sm p-4">Cargando plantillas…</p>';
+    grid.innerHTML = '<p class="text-slate-500 text-sm p-4">Loading templates...</p>';
 
     const templates = await loadTemplateList();
 
     if (templates.length === 0) {
-        grid.innerHTML = '<p class="text-slate-500 text-sm p-4">No hay plantillas. Guarda un proyecto como .json en la carpeta <code>templates/</code>.</p>';
+        grid.innerHTML = '<p class="text-slate-500 text-sm p-4">No templates found. Save a project as .json in the <code>templates/</code> folder.</p>';
         return;
     }
 
