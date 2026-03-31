@@ -2031,6 +2031,19 @@ document.getElementById('languageModal').addEventListener('click', function(e) {
     }
 });
 
+// About modal
+document.getElementById('aboutBtn').addEventListener('click', function() {
+    document.getElementById('aboutModal').classList.remove('hidden');
+});
+document.getElementById('closeAboutBtn').addEventListener('click', function() {
+    document.getElementById('aboutModal').classList.add('hidden');
+});
+document.getElementById('aboutModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        this.classList.add('hidden');
+    }
+});
+
 // Language switch
 document.getElementById('languageSelect').addEventListener('change', function(e) {
     switchLanguage(e.target.value);
