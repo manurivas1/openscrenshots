@@ -1,0 +1,37 @@
+{
+  "themes": [
+    {
+      "name": "Indigo Dark",
+      "background": { "type": "gradient", "color1": "#1e1b4b", "color2": "#312e81", "angle": 135 },
+      "accent": "#818cf8",
+      "text": "#f8fafc",
+      "description": "Professional, tech-focused, high trust."
+    },
+    {
+      "name": "Sunset Warm",
+      "background": { "type": "gradient", "color1": "#fb923c", "color2": "#ec4899", "angle": 45 },
+      "accent": "#ffffff",
+      "text": "#ffffff",
+      "description": "Lifestyle, media, vibrant apps."
+    },
+    {
+      "name": "Minimal Mint",
+      "background": { "type": "solid", "color": "#f0fdf4" },
+      "accent": "#22c55e",
+      "text": "#064e3b",
+      "description": "Productivity, health, clean aesthetics."
+    },
+    {
+      "name": "Cyber Neon",
+      "background": { "type": "solid", "color": "#000000" },
+      "accent": "#00ff00",
+      "text": "#ffffff",
+      "description": "Gaming, crypto, performance."
+    }
+  ],
+  "typography": {
+    "h1": { "fontSize": 64, "fontWeight": "800", "fontFamily": "\"Inter\", sans-serif" },
+    "h2": { "fontSize": 48, "fontWeight": "700" },
+    "body": { "fontSize": 24, "fontWeight": "400" }
+  }
+}
