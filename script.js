@@ -529,8 +529,6 @@ function createScreenOverlay() {
     const bbSize = worldBB.getSize(new THREE.Vector3());
     const bbCenter = worldBB.getCenter(new THREE.Vector3());
 
-    console.log('[OVERLAY] Screen bounds - size:', bbSize.x.toFixed(3), bbSize.y.toFixed(3), bbSize.z.toFixed(3));
-    console.log('[OVERLAY] Screen center:', bbCenter.x.toFixed(3), bbCenter.y.toFixed(3), bbCenter.z.toFixed(3));
 
     // Detectar eje plano (normal de la pantalla) y calcular dimensiones del PlaneGeometry
     const minDim = Math.min(bbSize.x, bbSize.y, bbSize.z);
@@ -540,15 +538,12 @@ function createScreenOverlay() {
         // Pantalla plana en X → plano en Y-Z
         planeW = bbSize.z;
         planeH = bbSize.y;
-        console.log('[OVERLAY] Pantalla plana en X → plano Y-Z');
     } else if (minDim === bbSize.y) {
         planeW = bbSize.x;
         planeH = bbSize.z;
-        console.log('[OVERLAY] Pantalla plana en Y → plano X-Z');
     } else {
         planeW = bbSize.x;
         planeH = bbSize.y;
-        console.log('[OVERLAY] Pantalla plana en Z → plano X-Y');
     }
 
     // Calcular radio de esquina proporcional al dispositivo
@@ -601,7 +596,6 @@ function createScreenOverlay() {
     }
 
     phoneModel.add(customScreenPlane);
-    console.log('[OVERLAY] ✅ Screen overlay creado:', planeW.toFixed(3), 'x', planeH.toFixed(3), 'cornerR:', cornerR.toFixed(3));
 }
 
 // --- Cargar Modelo 3D Local ---
@@ -641,7 +635,6 @@ function loadLocal3DModel(modelPath, callback = null) {
                     phoneScreenMesh = child;
                     // Ocultar el mesh original — la textura irá en el overlay
                     child.visible = false;
-                    console.log(`[3D] ✅ Pantalla detectada: "${child.name}" → será reemplazada por overlay`);
                 }
                 else {
                     if (child.material) {
@@ -683,7 +676,7 @@ function loadLocal3DModel(modelPath, callback = null) {
         renderer.render(scene, camera);
         if (callback) callback();
 
-    }, undefined, (error) => console.error("Error cargando .glb:", error));
+    }, undefined, (error) => {});
 }
 
 // Inicializar con el modelo seleccionado por defecto
@@ -701,10 +694,9 @@ function loadTextureAsPromise(url) {
             tex.flipY = true; // PlaneGeometry usa UVs estándar → flipY=true
             tex.colorSpace = THREE.SRGBColorSpace;
             tex.needsUpdate = true;
-            console.log('[TEX] ✅ Textura lista:', img.naturalWidth, 'x', img.naturalHeight);
             resolve(tex);
         };
-        img.onerror = (e) => { console.error('[TEX] ❌ Error cargando imagen:', e); reject(e); };
+        img.onerror = (e) => { reject(e); };
         img.src = url;
     });
 }
@@ -949,14 +941,12 @@ function createRoundedScreenImage(image, cornerRadius) {
 
 // Aplica textura al OVERLAY PLANE (no al mesh original del modelo)
 async function applyTextureToScreen(textureUrl) {
-    if (!customScreenPlane) { console.warn('[SYNC] No hay customScreenPlane'); return; }
+    if (!customScreenPlane) { return; }
     if (!textureUrl) {
-        console.log('[SYNC] Sin textura, aplicando color negro');
         customScreenPlane.material = new THREE.MeshBasicMaterial({ color: 0x111111, side: THREE.FrontSide });
         return;
     }
     try {
-        console.log('[SYNC] Cargando textura:', textureUrl.substring(0, 60));
         // Cargar la imagen primero para poder aplicar esquinas redondeadas
         const img = await new Promise((resolve, reject) => {
             const i = new Image();
@@ -981,9 +971,7 @@ async function applyTextureToScreen(textureUrl) {
         customScreenPlane.material = new THREE.MeshBasicMaterial({
             map: tex, color: 0xffffff, transparent: true, side: THREE.FrontSide
         });
-        console.log('[SYNC] ✅ Textura con esquinas redondeadas aplicada (r=' + cornerRadius + ')');
     } catch (error) {
-        console.error('[SYNC] ❌ Error:', error);
     }
 }
 
@@ -1113,9 +1101,14 @@ function handleSelection(e) {
 
         // Shape controls
         var shapeControls = document.getElementById('shapeControls');
-        if (obj.isShape) {
+        if (obj.isShape || obj.isLaurel) {
             shapeControls.classList.remove('hidden');
-            document.getElementById('shapeFillColor').value = obj.fill || '#6366f1';
+            let currentColor = obj.fill;
+            if (obj.isLaurel && obj.getObjects) {
+                const paths = obj.getObjects();
+                if (paths.length > 0) currentColor = paths[0].fill;
+            }
+            document.getElementById('shapeFillColor').value = currentColor || '#ffffff';
             document.getElementById('shapeStrokeColor').value = obj.stroke || '#4f46e5';
             document.getElementById('shapeStrokeWidth').value = obj.strokeWidth || 0;
         } else {
@@ -1245,6 +1238,83 @@ if (freeImageInputEl) freeImageInputEl.addEventListener('change', function() {
     reader.readAsDataURL(file);
     this.value = '';
 });
+
+// Award / Laurel insertion
+document.getElementById('addAwardBtn').addEventListener('click', () => {
+    fabric.loadSVGFromURL('img/laurel-detailed-left.svg', function(objects, options) {
+        if (!objects || objects.length === 0) return;
+        
+        var leftLaurel = fabric.util.groupSVGElements(objects, options);
+        var baseColor = '#ffffff';
+        
+        // Clean up SVG
+        leftLaurel.set({
+            isDesignElement: true,
+            isLaurel: true,
+            originX: 'center',
+            originY: 'center',
+            scaleX: 0.25,
+            scaleY: 0.25
+        });
+
+        // Set colors inside group
+        if(leftLaurel.getObjects) {
+            leftLaurel.getObjects().forEach(obj => {
+                if(obj.fill) obj.set('fill', baseColor);
+                if(obj.stroke) obj.set('stroke', '');
+            });
+        }
+        
+        leftLaurel.clone(function(rightLaurel) {
+            rightLaurel.set({
+                flipX: true,
+                isDesignElement: true,
+                isLaurel: true,
+                originX: 'center',
+                originY: 'center',
+                scaleX: 0.25,
+                scaleY: 0.25
+            });
+
+            var text = new fabric.IText("Selección\\nEditorial", {
+                fontFamily: '"Inter", "SF Pro Display", system-ui, sans-serif',
+                fill: baseColor,
+                fontSize: 32,
+                fontWeight: '700',
+                textAlign: 'center',
+                originX: 'center',
+                originY: 'center',
+                isDesignElement: true
+            });
+
+            var centerX = canvas.width / 2;
+            var centerY = 300;
+            
+            // Apply bounds
+            text.set({ clipPath: globalClipPath });
+            leftLaurel.set({ clipPath: globalClipPath });
+            rightLaurel.set({ clipPath: globalClipPath });
+
+            canvas.add(leftLaurel, text, rightLaurel);
+
+            // Calculate spacing based on text width
+            var textWidth = text.getScaledWidth();
+            var spacing = 50;
+            
+            text.set({ left: centerX, top: centerY });
+            leftLaurel.set({ left: centerX - textWidth/2 - spacing, top: centerY });
+            rightLaurel.set({ left: centerX + textWidth/2 + spacing, top: centerY });
+
+            // Select them together
+            var sel = new fabric.ActiveSelection([leftLaurel, text, rightLaurel], {
+                canvas: canvas,
+            });
+            canvas.setActiveObject(sel);
+            renderLayout();
+        });
+    });
+});
+
 
 // Lock/Unlock element
 document.getElementById('lockElementBtn').addEventListener('click', () => {
@@ -1462,7 +1532,22 @@ document.getElementById('addArrowBtn').addEventListener('click', function() { cr
 // Shape style controls
 document.getElementById('shapeFillColor').addEventListener('input', function() {
     var obj = canvas.getActiveObject();
-    if (obj && obj.isShape) { obj.set('fill', this.value); canvas.renderAll(); }
+    if (!obj) return;
+    
+    // Apply function logic for multiple elements (like active selection)
+    const applyFill = (target) => {
+        if (target.isShape) { target.set('fill', this.value); }
+        if (target.isLaurel && target.getObjects) {
+            target.getObjects().forEach(subObj => { if (subObj.fill) subObj.set('fill', this.value); });
+        }
+    };
+    
+    if (obj.type === 'activeSelection') {
+        obj.getObjects().forEach(applyFill);
+    } else {
+        applyFill(obj);
+    }
+    canvas.renderAll();
 });
 document.getElementById('shapeStrokeColor').addEventListener('input', function() {
     var obj = canvas.getActiveObject();
@@ -1488,6 +1573,7 @@ function getElementLabel(obj) {
     if (obj.is3DModel) return '\ud83d\udcf1 3D Device';
     if (obj.isFreeImage) return '\ud83d\uddbc Image';
     if (obj.isBackgroundImage) return '\ud83c\udf05 Background';
+    if (obj.isLaurel) return '🌿 Laurel Wreath';
     if (obj.isShape) {
         if (obj.shapeType === 'rect') return '\u25a0 Rectangle';
         if (obj.shapeType === 'circle') return '\u25cf Circle';
@@ -1701,18 +1787,15 @@ async function loadTemplateList() {
     try {
         const resp = await fetch('./templates/all.json');
         if (!resp.ok) {
-            console.warn('[Templates] all.json not found or HTTP error');
             return [];
         }
         
         const templates = await resp.json();
         if (!Array.isArray(templates)) {
-            console.error('[Templates] all.json did not return an array');
             return [];
         }
         return templates;
     } catch (e) {
-        console.warn('[Templates] Could not load templates from all.json:', e);
         return [];
     }
 }
@@ -1725,7 +1808,6 @@ async function applyTemplateFromFile(href) {
         importProjectFromJSON(jsonText);
         document.getElementById('templatesModal').classList.add('hidden');
     } catch (e) {
-        console.error('[Templates] Failed to load template:', href, e);
         alert('Could not load template: ' + decodeURIComponent(href) + '\\n\\nMake sure it exists in the templates folder.');
     }
 }
@@ -2202,7 +2284,6 @@ function importProjectFromJSON(jsonString) {
             elementsToLoad.forEach(function(e) {
                 if (e.left !== undefined) e.left -= inferredShift;
             });
-            console.log('[SYNC] 🛠 Legacy template detected off-screen. Shifted coordinates left by', inferredShift, 'px to rescue elements.');
         }
     }
 
@@ -2632,5 +2713,3 @@ window.DesignAPI = {
     }
 };
 
-console.log('%c🎨 DesignAPI ready! Use window.DesignAPI to control the editor programmatically.', 'color: #6366f1; font-weight: bold; font-size: 14px;');
-console.log('%cAvailable methods:', 'color: #94a3b8;', Object.keys(window.DesignAPI).join(', '));

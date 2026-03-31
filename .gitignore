@@ -27,3 +27,7 @@ pnpm-debug.log*
 
 # MCP
 mcp-server/node_modules
+.agents
+.trae
+.windsurf
+.claude
