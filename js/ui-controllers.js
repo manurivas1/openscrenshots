@@ -240,10 +240,9 @@ export function initUI() {
         refreshAllTexts();
         const devices = canvas.getObjects().filter(o => o.is3DModel);
         for (let d of devices) {
-            updateThreeDevice(d.rotX, d.rotY, d.rotZ, d.frameColor, d.is2DMode);
-            await applyTextureToScreen(d.imageKey ? getImageForKey(d.imageKey) : null);
-            d.setSrc(render3DToImage(), () => canvas.renderAll());
+            await syncAndRenderActiveDevice(d);
         }
+        canvas.renderAll();
     }));
     document.getElementById('exportProjectBtn')?.addEventListener('click', exportProjectToJSON);
     document.getElementById('importProjectInput')?.addEventListener('change', function() {
@@ -267,14 +266,13 @@ export function initUI() {
     // Banks
     document.getElementById('addKeyBtn')?.addEventListener('click', () => addImageBankKey(null));
     document.getElementById('addTextKeyBtn')?.addEventListener('click', () => addTextBankKey(null));
-    document.getElementById('languageSelect')?.addEventListener('change', (e) => {
+    document.getElementById('languageSelect')?.addEventListener('change', async (e) => {
         setCurrentLanguage(e.target.value); refreshAllTexts();
         const devices = canvas.getObjects().filter(o => o.is3DModel);
-        devices.forEach(async d => {
-            updateThreeDevice(d.rotX, d.rotY, d.rotZ, d.frameColor, d.is2DMode);
-            await applyTextureToScreen(d.imageKey ? getImageForKey(d.imageKey) : null);
-            d.setSrc(render3DToImage(), () => canvas.renderAll());
-        });
+        for (const d of devices) {
+            await syncAndRenderActiveDevice(d);
+        }
+        canvas.renderAll();
     });
 
     // Modals
