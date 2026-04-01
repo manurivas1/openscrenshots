@@ -58,11 +58,14 @@ export async function bulkUploadImages(files) {
     
     console.log(`Starting bulk upload for ${files.length} files...`);
     
+    // IMPORTANT: Convert to Array to avoid issues if the input value is cleared early
+    const fileArray = Array.from(files);
+    
     let anyLanguageAdded = false;
     let anyKeyAdded = false;
 
     try {
-        for (const file of files) {
+        for (const file of fileArray) {
             const fullName = file.name;
             const lastDot = fullName.lastIndexOf('.');
             const nameWithoutExt = lastDot !== -1 ? fullName.substring(0, lastDot) : fullName;

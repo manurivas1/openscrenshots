@@ -274,9 +274,13 @@ export function initUI() {
             console.log("Bulk upload button clicked, triggering file input...");
             bulkInput.click();
         });
-        bulkInput.addEventListener('change', function() {
+        bulkInput.addEventListener('change', async function() {
             console.log("Bulk input change detected, files:", this.files);
-            bulkUploadImages(this.files).catch(err => console.error("Bulk upload error:", err));
+            try {
+                await bulkUploadImages(this.files);
+            } catch (err) {
+                console.error("Bulk upload error:", err);
+            }
             this.value = '';
         });
     } else {
