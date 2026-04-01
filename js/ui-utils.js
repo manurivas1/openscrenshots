@@ -56,16 +56,16 @@ export async function bulkUploadImages(files) {
         return;
     }
     
-    console.log(`Starting bulk upload for ${files.length} files...`);
-    
-    // IMPORTANT: Convert to Array to avoid issues if the input value is cleared early
+    // Convert to a real array of file references immediately
     const fileArray = Array.from(files);
+    console.log(`[V1.2.5] Starting bulk upload for ${fileArray.length} files...`);
     
     let anyLanguageAdded = false;
     let anyKeyAdded = false;
 
-    try {
-        for (const file of fileArray) {
+    for (let i = 0; i < fileArray.length; i++) {
+        const file = fileArray[i];
+        try {
             const fullName = file.name;
             const lastDot = fullName.lastIndexOf('.');
             const nameWithoutExt = lastDot !== -1 ? fullName.substring(0, lastDot) : fullName;
@@ -73,6 +73,9 @@ export async function bulkUploadImages(files) {
             let lang = currentLanguage;
             let key = nameWithoutExt;
 
+            console.log(`File [${i+1}/${fileArray.length}]: Analyzing "${fullName}"...`);
+
+            // Parsing lang_key pattern
             const underscoreIdx = nameWithoutExt.indexOf('_');
             if (underscoreIdx !== -1) {
                 const potentialLang = nameWithoutExt.substring(0, underscoreIdx).toLowerCase();
@@ -91,22 +94,30 @@ export async function bulkUploadImages(files) {
                 continue;
             }
 
+            // Auto-update languages/keys in current state
             if (!languages.includes(lang)) {
-                console.log(`Adding new language to project: ${lang}`);
+                console.log(`Auto-adding language: ${lang}`);
                 languages.push(lang);
                 anyLanguageAdded = true;
             }
 
             if (!imageBank[key]) {
-                console.log(`Creating new image key: ${key}`);
+                console.log(`Auto-creating new key: ${key}`);
                 imageBank[key] = {};
                 anyKeyAdded = true;
             }
 
-            console.log(`Processing: ${fullName} -> key: ${key}, lang: ${lang}`);
+            console.log(`Processing: "${fullName}" -> [key: ${key}, lang: ${lang}]`);
+            // Store as base64 - true for skipRender inside batch
             await setImageForKey(key, lang, file, true);
-        }
+            console.log(`Finished processing: "${fullName}"`);
 
+        } catch (fileErr) {
+            console.error(`Error processing individual file "${file.name}":`, fileErr);
+        }
+    }
+
+    try {
         if (anyLanguageAdded) {
             renderLanguageSelector();
             renderLanguageGrid();
@@ -115,12 +126,11 @@ export async function bulkUploadImages(files) {
         renderImageBankUI();
         if (anyKeyAdded) updateKeySelects();
         
-        console.log("Bulk upload finished, refreshing 3D view...");
+        console.log("Bulk upload complete. Refreshing 3D view...");
         await syncAndRenderActiveDevice();
-        
-    } catch (err) {
-        console.error("Critical error during bulk upload:", err);
-        alert("An error occurred during bulk upload. Check the console for details.");
+        console.log("3D View sync complete.");
+    } catch (finalErr) {
+        console.error("Error finalizing UI render after bulk upload:", finalErr);
     }
 }
 
