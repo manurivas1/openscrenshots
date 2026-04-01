@@ -265,11 +265,23 @@ export function initUI() {
 
     // Banks
     document.getElementById('addKeyBtn')?.addEventListener('click', () => addImageBankKey(null));
-    document.getElementById('bulkUploadBtn')?.addEventListener('click', () => document.getElementById('bulkImageInput').click());
-    document.getElementById('bulkImageInput')?.addEventListener('change', function() {
-        bulkUploadImages(this.files);
-        this.value = '';
-    });
+    
+    const bulkBtn = document.getElementById('bulkUploadBtn');
+    const bulkInput = document.getElementById('bulkImageInput');
+    
+    if (bulkBtn && bulkInput) {
+        bulkBtn.addEventListener('click', () => {
+            console.log("Bulk upload button clicked, triggering file input...");
+            bulkInput.click();
+        });
+        bulkInput.addEventListener('change', function() {
+            console.log("Bulk input change detected, files:", this.files);
+            bulkUploadImages(this.files).catch(err => console.error("Bulk upload error:", err));
+            this.value = '';
+        });
+    } else {
+        console.warn("Bulk upload elements not found in DOM:", { bulkBtn, bulkInput });
+    }
     document.getElementById('addTextKeyBtn')?.addEventListener('click', () => addTextBankKey(null));
     document.getElementById('languageSelect')?.addEventListener('change', async (e) => {
         setCurrentLanguage(e.target.value); refreshAllTexts();
