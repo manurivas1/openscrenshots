@@ -282,6 +282,9 @@ export function initUI() {
     document.getElementById('closeLanguageModalBtn')?.addEventListener('click', () => {
         document.getElementById('languageModal').classList.add('hidden'); refreshAllTexts();
     });
+    document.getElementById('closeLanguageModalBtn2')?.addEventListener('click', () => {
+        document.getElementById('languageModal').classList.add('hidden'); refreshAllTexts();
+    });
     document.getElementById('openTemplatesBtn')?.addEventListener('click', () => {
         renderTemplateGrid(); document.getElementById('templatesModal').classList.remove('hidden');
     });
