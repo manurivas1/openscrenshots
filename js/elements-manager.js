@@ -112,17 +112,17 @@ export function createShape(type) {
     }
 }
 
-export async function syncAndRenderActiveDevice() {
+export async function syncAndRenderActiveDevice(targetObj) {
     const canvas = getCanvas();
-    const activeObj = canvas.getActiveObject();
-    if (!activeObj || !activeObj.is3DModel || !phoneModel) return;
+    const obj = targetObj || canvas.getActiveObject();
+    if (!obj || !obj.is3DModel || !phoneModel) return;
 
-    updateThreeDevice(activeObj.rotX, activeObj.rotY, activeObj.rotZ, activeObj.frameColor, activeObj.is2DMode);
-    await applyTextureToScreen(activeObj.imageKey ? getImageForKey(activeObj.imageKey) : null);
+    updateThreeDevice(obj.rotX, obj.rotY, obj.rotZ, obj.frameColor, obj.is2DMode);
+    await applyTextureToScreen(obj.imageKey ? getImageForKey(obj.imageKey) : null);
 
     const newDataURL = render3DToImage();
     if (newDataURL) {
-        activeObj.setSrc(newDataURL, () => canvas.renderAll());
+        obj.setSrc(newDataURL, () => canvas.renderAll());
     }
 }
 
