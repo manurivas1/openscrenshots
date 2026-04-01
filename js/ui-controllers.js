@@ -18,7 +18,7 @@ import {
     renderImageBankUI, renderTextBankUI, updateKeySelects, 
     updateTextKeySelects, renderLanguageSelector, 
     renderLanguageGrid, refreshAllTexts, renderLayerPanel,
-    addImageBankKey, addTextBankKey
+    addImageBankKey, addTextBankKey, bulkUploadImages
 } from './ui-utils.js';
 import { 
     exportZIP, exportAllLanguagesZIP, 
@@ -265,6 +265,11 @@ export function initUI() {
 
     // Banks
     document.getElementById('addKeyBtn')?.addEventListener('click', () => addImageBankKey(null));
+    document.getElementById('bulkUploadBtn')?.addEventListener('click', () => document.getElementById('bulkImageInput').click());
+    document.getElementById('bulkImageInput')?.addEventListener('change', function() {
+        bulkUploadImages(this.files);
+        this.value = '';
+    });
     document.getElementById('addTextKeyBtn')?.addEventListener('click', () => addTextBankKey(null));
     document.getElementById('languageSelect')?.addEventListener('change', async (e) => {
         setCurrentLanguage(e.target.value); refreshAllTexts();

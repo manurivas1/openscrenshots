@@ -37,17 +37,77 @@ export function removeImageBankKey(name) {
     updateKeySelects();
 }
 
-export function setImageForKey(key, lang, file) {
+export function setImageForKey(key, lang, file, skipRender = false) {
     return new Promise(resolve => {
         var reader = new FileReader();
         reader.onload = e => {
             if (!imageBank[key]) imageBank[key] = {};
             imageBank[key][lang] = e.target.result;
-            renderImageBankUI();
+            if (!skipRender) renderImageBankUI();
             resolve();
         };
         reader.readAsDataURL(file);
     });
+}
+
+export async function bulkUploadImages(files) {
+    if (!files || files.length === 0) return;
+    
+    let anyLanguageAdded = false;
+    let anyKeyAdded = false;
+
+    // We process sequentially 
+    for (const file of files) {
+        const fullName = file.name;
+        const lastDot = fullName.lastIndexOf('.');
+        const nameWithoutExt = lastDot !== -1 ? fullName.substring(0, lastDot) : fullName;
+        
+        let lang = currentLanguage;
+        let key = nameWithoutExt;
+
+        // Try to find the pattern "lang_key"
+        const underscoreIdx = nameWithoutExt.indexOf('_');
+        if (underscoreIdx !== -1) {
+            const potentialLang = nameWithoutExt.substring(0, underscoreIdx).toLowerCase();
+            const potentialKey = nameWithoutExt.substring(underscoreIdx + 1);
+            
+            // Validate if potentialLang is a known language code
+            const isKnownLang = ALL_LANGUAGES.some(l => l.code === potentialLang);
+            if (isKnownLang) {
+                lang = potentialLang;
+                key = potentialKey;
+            }
+        }
+
+        // Clean key
+        key = key.trim().toLowerCase().replace(/[^a-z0-9_]/g, '_');
+        if (!key) continue;
+
+        // Auto-add language if not in current project
+        if (!languages.includes(lang)) {
+            languages.push(lang);
+            anyLanguageAdded = true;
+        }
+
+        // Auto-create key
+        if (!imageBank[key]) {
+            imageBank[key] = {};
+            anyKeyAdded = true;
+        }
+
+        await setImageForKey(key, lang, file, true);
+    }
+
+    if (anyLanguageAdded) {
+        renderLanguageSelector();
+        renderLanguageGrid();
+    }
+    
+    renderImageBankUI();
+    if (anyKeyAdded) updateKeySelects();
+    
+    // Final sync for 3D devices on canvas
+    syncAndRenderActiveDevice();
 }
 
 export function addLanguage(code) {

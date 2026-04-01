@@ -655,10 +655,17 @@
                         <h2 class="text-xl font-bold text-slate-800">📸 Image Bank</h2>
                         <p class="text-sm text-slate-500 mt-1">Manage localized screenshots. Click a cell to upload.</p>
                     </div>
-                    <button id="addKeyBtn"
-                        class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm transition-colors shadow-sm">
-                        + Add Key
-                    </button>
+                    <div class="flex items-center gap-2">
+                        <button id="bulkUploadBtn"
+                            class="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-900 text-white font-semibold text-sm transition-colors shadow-sm flex items-center gap-2">
+                            <span>📦</span> Bulk Upload
+                        </button>
+                        <input type="file" id="bulkImageInput" multiple accept="image/*" class="hidden">
+                        <button id="addKeyBtn"
+                            class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm transition-colors shadow-sm">
+                            + Add Key
+                        </button>
+                    </div>
                 </div>
                 <div id="imageBankTableContainer"
                     class="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
