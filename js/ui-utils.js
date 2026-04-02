@@ -1,6 +1,6 @@
 import { 
     imageBank, textBank, languages, currentLanguage, 
-    getLangInfo, setTextBank, getImageForKey,
+    getLangInfo, setTextBank, getImageForKey, getTextForKey, setTextForKey, getTextStyleForKey,
     ALL_LANGUAGES, setCurrentLanguage, setLanguages
 } from './state.js';
 import { getCanvas, renderLayout } from './canvas-core.js';
@@ -300,8 +300,26 @@ export function renderTextBankUI(editingKey) {
         
         var cells = keyCell +
             languages.map(lang => {
-                var val = (textBank[key][lang] || '').replace(/"/g, '&quot;');
-                return `<td><textarea class="text-cell" data-text-key="${key}" data-text-lang="${lang}" placeholder="...">${val}</textarea></td>`;
+                var data = textBank[key][lang] || '';
+                var val = (typeof data === 'object' ? data.text : data).replace(/"/g, '&quot;');
+                var fontSize = (typeof data === 'object' ? data.fontSize : '') || '';
+                var fontWeight = (typeof data === 'object' ? data.fontWeight : '') || '';
+                
+                return `<td>
+                    <textarea class="text-cell" data-text-key="${key}" data-text-lang="${lang}" placeholder="...">${val}</textarea>
+                    <div class="flex gap-1 mt-1">
+                        <input type="number" class="style-input w-full" placeholder="Size" title="Font Size" 
+                               data-text-key="${key}" data-text-lang="${lang}" data-style="fontSize" value="${fontSize}">
+                        <select class="style-input w-full" title="Font Weight" 
+                                data-text-key="${key}" data-text-lang="${lang}" data-style="fontWeight">
+                            <option value="">Weight</option>
+                            <option value="normal" ${fontWeight === 'normal' ? 'selected' : ''}>400</option>
+                            <option value="600" ${fontWeight === '600' ? 'selected' : ''}>600</option>
+                            <option value="700" ${fontWeight === '700' ? 'selected' : ''}>700</option>
+                            <option value="900" ${fontWeight === '900' ? 'selected' : ''}>900</option>
+                        </select>
+                    </div>
+                </td>`;
             }).join('') +
             `<td><button class="text-red-400 hover:text-red-600 text-sm font-bold px-1" data-delete-text-key="${key}" title="Delete">×</button></td>`;
         return `<tr>${cells}</tr>`;
@@ -333,6 +351,19 @@ export function renderTextBankUI(editingKey) {
         });
         ta.addEventListener('blur', refreshAllTexts);
     });
+
+    container.querySelectorAll('.style-input').forEach(input => {
+        input.addEventListener('change', function() {
+            const key = this.dataset.textKey;
+            const lang = this.dataset.textLang;
+            const styleProp = this.dataset.style;
+            const value = this.value;
+            
+            setTextForKey(key, lang, getTextForKey(key), { [styleProp]: value });
+            refreshAllTexts();
+        });
+    });
+
     container.querySelectorAll('button[data-delete-text-key]').forEach(btn => {
         btn.addEventListener('click', function() {
             if (confirm(`Delete text key "${this.dataset.deleteTextKey}"?`)) removeTextBankKey(this.dataset.deleteTextKey);
@@ -346,7 +377,14 @@ export function refreshAllTexts() {
     canvas.getObjects().forEach(obj => {
         if (obj.textKey && obj.isDesignElement) {
             var newText = getTextForKey(obj.textKey);
-            if (newText !== null && newText !== obj.text) obj.set({ text: newText });
+            if (newText !== null) {
+                const styles = getTextStyleForKey(obj.textKey, currentLanguage);
+                const updates = { text: newText };
+                if (styles.fontSize) updates.fontSize = parseInt(styles.fontSize);
+                if (styles.fontWeight) updates.fontWeight = styles.fontWeight;
+                
+                obj.set(updates);
+            }
         }
     });
     canvas.renderAll();

@@ -3,6 +3,7 @@ import { loadLocal3DModel } from './three-engine.js';
 import { initUI } from './ui-controllers.js';
 import { initDesignAPI } from './design-api.js';
 import { initHistoryEvents, saveHistory } from './history.js';
+import { initPersistence } from './persistence-service.js';
 import { 
     renderLanguageSelector, renderImageBankUI, renderTextBankUI, 
     updateKeySelects, updateTextKeySelects 
@@ -15,6 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // 2. UI & API Initialization
     initUI();
     initDesignAPI();
+    initPersistence();
     initHistoryEvents();
 
     // 3. Initial state setup

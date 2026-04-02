@@ -1,60 +1,76 @@
 ---
 name: designer
-description: Expert App Store Screenshot Designer Skill
+description: Expert App Store Screenshot Designer Skill with JSON Generation
 ---
 
 # App Store Designer Skill 🎨
 
-This skill empowers Antigravity to create professional-grade App Store and Play Store screenshot designs using the modular `DesignAPI` of WebScreenshots Pro 3D.
+This skill empowers Antigravity to create professional-grade App Store and Play Store screenshot designs, either via the `DesignAPI` or by generating complete **WebScreenshots Pro 3D Project JSONs**.
 
-## 🛠️ API Mapping
+## 🛠️ Project JSON Specification (v1)
 
-| Task | DesignAPI Method |
+To restore a design, the AI can generate a JSON object with the following structure:
+
+```json
+{
+  "version": 1,
+  "name": "Project Name",
+  "screensData": [{ "id": "screen_1", "color": "#ffffff" }],
+  "languages": ["en", "es"],
+  "currentLanguage": "en",
+  "globalBgColor": "#f8fafc",
+  "bgMode": "gradient",
+  "gradColor1": "#4f46e5",
+  "gradColor2": "#7c3aed",
+  "gradAngle": 180,
+  "imageBank": { "screenshot_1": { "en": "data:image/png;base64,..." } },
+  "textBank": { 
+    "header_1": { 
+      "en": { "text": "Fast & Secure", "fontSize": 52, "fontWeight": "900" }, 
+      "es": { "text": "Rápido y Seguro", "fontSize": 48 } 
+    } 
+  },
+  "elements": []
+}
+```
+
+### 📐 Coordinate System & Geometry
+- **Main Canvas**: 3840px x 1000px.
+- **Screen Units**: Standard width is 400px, height is 860px.
+- **Screen Placement**: Each screen $i$ (0-indexed) starts at $X = 40 + (i \times 440)$, $Y = 100$.
+- **Safe Area**: Keep headings at $Y = 150-250$ to avoid overlap with device notches.
+
+### 🎭 Element Dictionary (`elements[]`)
+
+| Property | Description |
 | --- | --- |
-| Set Background | `setBackground({ type, color1, color2, angle })` |
-| Add Heading | `addText({ text, fontSize: 52, fontWeight: '800' })` |
-| Add Subheading | `addText({ text, fontSize: 32, opacity: 0.8 })` |
-| Apply Template | `applyTemplate(name)` |
-| Add Shape | `addShape({ type, fill, x, y, ... })` |
+| `elementType` | One of `text`, `3ddevice`, `freeimage`. |
+| `left`, `top` | Position in 3840px canvas. |
+| `scaleX`, `scaleY` | Scaling factors (default 1). |
+| `textKey` | (For `text`) Mapping to `textBank`. |
+| `imageKey` | (For `3ddevice`) Mapping to `imageBank`. |
+| `rotX`, `rotY`, `rotZ` | (For `3ddevice`) 3D rotation in PI units (e.g., `-0.2`). |
+| `frameColor` | Hex color of the 3D phone frame. |
 
-## 📏 Design Geometry
+## 🎨 Color Palettes & Design Principles
 
-### Standard Canvas: 3840px x 1000px
-- **Screen Width**: 400px
-- **Screen Height**: 860px
-- **Top Margin**: 150px (Avoid dynamic island/notch)
-- **Safe Area**: Keep important text within 50px-350px horizontally for each screen.
+- **Contrast**: Use WCAG 2.1 compliant contrast for text over backgrounds.
+- **Shadows**: Large headings should use a subtle shadow: `{ color: 'rgba(0,0,0,0.3)', blur: 12, offsetX: 0, offsetY: 4 }`.
+- **Typography**: Default is `Inter, sans-serif`. Use `fontWeight: '900'` for impact.
 
-### Device Tilt (3D Mode)
-- **Hero Screen**: `rotY: -20, rotX: 10`
-- **Side Stack**: `rotY: 45, scale: 0.8, opacity: 0.6`
+## 🚀 State Generation Workflow
 
-## 🎨 Color Palettes (Resources)
-
-Refer to `resources/design_system.json` for:
-- **Indigo Dark**: Deep blues with neon violet accents.
-- **Sunset Warm**: Orange to pink gradients for lifestyle/media apps.
-- **Minimal Mint**: Clean whites and soft greens for productivity.
-
-## 🚀 Workflows
-
-### 1. New Feature Showcase
-1. `DesignAPI.newProject()`
-2. `DesignAPI.setBackground({ type: 'gradient', color1: '#4f46e5', color2: '#7c3aed' })`
-3. `DesignAPI.addText({ text: 'Powerful Features', x: 400, y: 120, fontSize: 52, textAlign: 'center' })`
-4. `DesignAPI.addScreen({ color: 'transparent' })`
-
-### 2. Multi-language Export
-1. Design one screen in English.
-2. Use `DesignAPI.setLanguage(lang)` to switch.
-3. Verify text scaling for longer languages (e.g., German/French).
-4. Run `exportAllLanguages()` via the UI or `DesignAPI.exportProject()`.
+When asked to "build the JSON" or "generate a template":
+1. **Define Visual Pillars**: Choose a color palette (e.g., "Deep Midnight with Neon Blue").
+2. **Setup Screens**: Calculate $X$ positions for the required number of screens (e.g., Screen 1: 40, Screen 2: 480).
+3. **Map the Bank**: Create keys for text and images to allow for localization.
+4. **Assemble Elements**: Coordinate headings and 3D device tilts to create a visual flow across screens.
 
 ---
 
 ## 🤖 AI Instructions
 
-When acting as the **Designer**, always prioritize:
-1. **Readability**: High contrast between text and background.
-2. **Branding**: Use the app's primary color as the accent.
-3. **Hierarchy**: Large catchy font for headlines, smaller for descriptions.
+- **No Placeholders**: Use real marketing copy for headings.
+- **Localization**: Always include at least two languages (EN/ES) in the `textBank`.
+- **Validation**: Ensure `imageKey` matches an entry in `imageBank` (even if using a placeholder base64 for the structure).
+- **Format**: Return the JSON inside a fenced code block with `json` identifier.

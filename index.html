@@ -289,6 +289,10 @@
             <input type="text" id="projectNameInput" value="Project"
                 class="ml-2 text-sm font-semibold text-slate-600 bg-transparent border-b-2 border-transparent hover:border-slate-200 focus:border-indigo-500 focus:outline-none transition-colors px-1 py-0.5 w-32 md:w-48 placeholder-slate-400"
                 placeholder="Project Name">
+            <div id="saveStatus" class="hidden md:block text-[10px] font-bold text-slate-400 uppercase tracking-tighter ml-1">Ready</div>
+            <button id="projectMgrBtn" class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-slate-600 hover:bg-slate-100 transition-colors text-xs font-semibold border border-transparent hover:border-slate-200 ml-2">
+                <span>📂</span> Projects
+            </button>
         </div>
         <div class="flex items-center gap-1 bg-slate-100 rounded-lg p-1">
             <button id="navDesignBtn" class="nav-tab active">🎨 Design</button>
@@ -762,6 +766,33 @@
                     </svg>
                     GitHub Repository
                 </a>
+            </div>
+        </div>
+    </div>
+
+    <div id="projectManagerModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[85vh] flex flex-col overflow-hidden transform scale-95 transition-transform duration-300">
+            <div class="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                <div>
+                    <h2 class="text-xl font-bold text-slate-800">📂 Project Manager</h2>
+                    <p class="text-sm text-slate-500">Manage your local SQLite projects</p>
+                </div>
+                <button id="closeProjectMgrBtn" class="p-2 hover:bg-slate-200 rounded-full transition-colors text-slate-400">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+            </div>
+            
+            <div id="projectListContainer" class="flex-1 overflow-y-auto p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="col-span-full py-20 text-center">
+                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+                    <p class="text-slate-400 text-sm italic">Loading projects...</p>
+                </div>
+            </div>
+            
+            <div class="p-4 border-t border-slate-100 bg-slate-50/80 flex justify-end gap-3">
+                <button id="mgrNewProjectBtn" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-semibold text-sm transition-all shadow-md">
+                    + New Project
+                </button>
             </div>
         </div>
     </div>

@@ -87,7 +87,25 @@ export function getImageForKey(key) {
 
 export function getTextForKey(key) {
     if (!key || !textBank[key]) return null;
-    return textBank[key][currentLanguage] || textBank[key][Object.keys(textBank[key])[0]] || '';
+    const langData = textBank[key][currentLanguage] || textBank[key][Object.keys(textBank[key])[0]] || '';
+    // Support both legacy string values and new style objects
+    return typeof langData === 'object' ? langData.text : langData;
+}
+
+export function getTextStyleForKey(key, lang = currentLanguage) {
+    if (!key || !textBank[key] || !textBank[key][lang]) return {};
+    const langData = textBank[key][lang];
+    return typeof langData === 'object' ? langData : {};
+}
+
+export function setTextForKey(key, lang, value, styles = {}) {
+    if (!textBank[key]) textBank[key] = {};
+    const current = typeof textBank[key][lang] === 'object' ? textBank[key][lang] : { text: textBank[key][lang] || '' };
+    textBank[key][lang] = {
+        ...current,
+        text: value,
+        ...styles
+    };
 }
 
 export function setCurrentLanguage(lang) {
