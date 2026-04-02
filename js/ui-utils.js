@@ -177,11 +177,6 @@ export function removeTextBankKey(name) {
     updateTextKeySelects();
 }
 
-export function setTextForKey(key, lang, value) {
-    if (!textBank[key]) textBank[key] = {};
-    textBank[key][lang] = value;
-}
-
 export function updateKeySelects() {
     var keys = Object.keys(imageBank);
     var options = '<option value="">(No screenshot)</option>' +
