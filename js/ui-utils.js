@@ -285,43 +285,67 @@ export function renderTextBankUI(editingKey) {
     }
 
     var headerCells = '<th class="pl-3">Key</th>' +
-        languages.map(lang => `<th style="min-width:140px">${getLangInfo(lang).flag} ${lang.toUpperCase()}</th>`).join('') + '<th></th>';
+        languages.map(lang => `<th style="min-width:210px">${getLangInfo(lang).flag} ${lang.toUpperCase()}</th>`).join('') + '<th></th>';
 
     var rows = keys.map(key => {
         var isEditing = (key === editingKey);
         var keyCell = isEditing
             ? `<td class="pl-3"><input type="text" class="text-xs font-mono font-bold text-slate-700 border border-indigo-400 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-indigo-300 w-full" id="inlineTextKeyInput" placeholder="key_name" autofocus></td>`
             : `<td class="pl-3"><span class="text-xs font-mono font-bold text-slate-700">${key}</span></td>`;
-        
-        var cells = keyCell +
-            languages.map(lang => {
-                var data = textBank[key][lang] || '';
-                var val = (typeof data === 'object' ? data.text : data).replace(/"/g, '&quot;');
-                var fontSize = (typeof data === 'object' ? data.fontSize : '') || '';
-                var fontWeight = (typeof data === 'object' ? data.fontWeight : '') || '';
-                
-                return `<td>
-                    <textarea class="text-cell" data-text-key="${key}" data-text-lang="${lang}" placeholder="...">${val}</textarea>
-                    <div class="flex gap-1 mt-1">
-                        <input type="number" class="style-input w-full" placeholder="Size" title="Font Size" 
-                               data-text-key="${key}" data-text-lang="${lang}" data-style="fontSize" value="${fontSize}">
-                        <select class="style-input w-full" title="Font Weight" 
-                                data-text-key="${key}" data-text-lang="${lang}" data-style="fontWeight">
-                            <option value="">Weight</option>
-                            <option value="normal" ${fontWeight === 'normal' ? 'selected' : ''}>400</option>
-                            <option value="600" ${fontWeight === '600' ? 'selected' : ''}>600</option>
-                            <option value="700" ${fontWeight === '700' ? 'selected' : ''}>700</option>
-                            <option value="900" ${fontWeight === '900' ? 'selected' : ''}>900</option>
-                        </select>
+
+        var cells = keyCell + languages.map(lang => {
+            var raw = textBank[key][lang] || {};
+            var val = (typeof raw === 'object' ? (raw.text || '') : raw).replace(/"/g, '&quot;');
+            var st  = typeof raw === 'object' ? raw : {};
+            var ff  = st.fontFamily  || '';
+            var fs  = st.fontSize    || '';
+            var fc  = st.fill        || '#ffffff';
+            var isBold   = st.fontWeight === 'bold' || st.fontWeight === '700';
+            var isItalic = st.fontStyle === 'italic';
+            var isUnder  = !!st.underline;
+            var ta       = st.textAlign || '';
+            var on  = 'tbc-btn active';
+            var off = 'tbc-btn';
+            return `<td class="tbc-cell">
+                <textarea class="text-cell" data-text-key="${key}" data-text-lang="${lang}" placeholder="...">${val}</textarea>
+                <div class="tbc-styles">
+                    <select class="tbc-select" data-text-key="${key}" data-text-lang="${lang}" data-style="fontFamily" title="Font Family">
+                        <option value="">Font…</option>
+                        <option value='"Inter",sans-serif'${ff.includes('Inter')?' selected':''}>Inter</option>
+                        <option value='"SF Pro Display",system-ui'${ff.includes('SF Pro')?' selected':''}>SF Pro</option>
+                        <option value='"Helvetica Neue",Helvetica,sans-serif'${ff.includes('Helvetica')?' selected':''}>Helvetica</option>
+                        <option value='Arial,sans-serif'${ff==='Arial,sans-serif'?' selected':''}>Arial</option>
+                        <option value='"Arial Black",sans-serif'${ff.includes('Arial Black')?' selected':''}>Arial Black</option>
+                        <option value='Georgia,serif'${ff==='Georgia,serif'?' selected':''}>Georgia</option>
+                        <option value='"Times New Roman",serif'${ff.includes('Times')?' selected':''}>Times New Roman</option>
+                        <option value='"Courier New",monospace'${ff.includes('Courier')?' selected':''}>Courier New</option>
+                        <option value='Impact,sans-serif'${ff==='Impact,sans-serif'?' selected':''}>Impact</option>
+                        <option value='Verdana,sans-serif'${ff==='Verdana,sans-serif'?' selected':''}>Verdana</option>
+                    </select>
+                    <div class="tbc-row">
+                        <input type="number" class="tbc-num" placeholder="Sz" title="Font Size"
+                               data-text-key="${key}" data-text-lang="${lang}" data-style="fontSize" value="${fs}" min="6" max="400">
+                        <input type="color" class="tbc-color" title="Color"
+                               data-text-key="${key}" data-text-lang="${lang}" data-style="fill" value="${fc}">
+                        <button class="${isBold?on:off}"   data-text-key="${key}" data-text-lang="${lang}" data-style="fontWeight" data-on="bold"   data-off="normal" title="Bold"><b>B</b></button>
+                        <button class="${isItalic?on:off}" data-text-key="${key}" data-text-lang="${lang}" data-style="fontStyle"  data-on="italic" data-off="normal" title="Italic"><i>I</i></button>
+                        <button class="${isUnder?on:off}"  data-text-key="${key}" data-text-lang="${lang}" data-style="underline"  data-on="true"   data-off=""       title="Underline"><u>U</u></button>
                     </div>
-                </td>`;
-            }).join('') +
-            `<td><button class="text-red-400 hover:text-red-600 text-sm font-bold px-1" data-delete-text-key="${key}" title="Delete">×</button></td>`;
+                    <div class="tbc-row">
+                        <button class="${ta==='left'?on:off}   tbc-align" data-text-key="${key}" data-text-lang="${lang}" data-style="textAlign" data-val="left"   title="Left">⬅</button>
+                        <button class="${ta==='center'?on:off} tbc-align" data-text-key="${key}" data-text-lang="${lang}" data-style="textAlign" data-val="center" title="Center">≡</button>
+                        <button class="${ta==='right'?on:off}  tbc-align" data-text-key="${key}" data-text-lang="${lang}" data-style="textAlign" data-val="right"  title="Right">➡</button>
+                    </div>
+                </div>
+            </td>`;
+        }).join('') +
+        `<td><button class="text-red-400 hover:text-red-600 text-sm font-bold px-1" data-delete-text-key="${key}" title="Delete">×</button></td>`;
         return `<tr>${cells}</tr>`;
     }).join('');
 
     container.innerHTML = `<table class="bank-table"><thead><tr>${headerCells}</tr></thead><tbody>${rows}</tbody></table>`;
 
+    // Inline key editing
     var inlineInput = document.getElementById('inlineTextKeyInput');
     if (inlineInput && editingKey) {
         inlineInput.focus();
@@ -340,6 +364,7 @@ export function renderTextBankUI(editingKey) {
         inlineInput.addEventListener('blur', confirmTextKey);
     }
 
+    // Textarea: save text
     container.querySelectorAll('textarea[data-text-key]').forEach(ta => {
         ta.addEventListener('input', function() {
             setTextForKey(this.dataset.textKey, this.dataset.textLang, this.value);
@@ -347,18 +372,70 @@ export function renderTextBankUI(editingKey) {
         ta.addEventListener('blur', refreshAllTexts);
     });
 
-    container.querySelectorAll('.style-input').forEach(input => {
-        input.addEventListener('change', function() {
-            const key = this.dataset.textKey;
-            const lang = this.dataset.textLang;
-            const styleProp = this.dataset.style;
-            const value = this.value;
-            
-            setTextForKey(key, lang, getTextForKey(key), { [styleProp]: value });
+    // Font family select
+    container.querySelectorAll('.tbc-select[data-style]').forEach(sel => {
+        sel.addEventListener('change', function() {
+            const cur = textBank[this.dataset.textKey]?.[this.dataset.textLang] || {};
+            const t   = typeof cur === 'object' ? (cur.text || '') : cur;
+            setTextForKey(this.dataset.textKey, this.dataset.textLang, t, { [this.dataset.style]: this.value });
             refreshAllTexts();
         });
     });
 
+    // Number size input
+    container.querySelectorAll('.tbc-num[data-style]').forEach(inp => {
+        inp.addEventListener('input', function() {
+            const cur = textBank[this.dataset.textKey]?.[this.dataset.textLang] || {};
+            const t   = typeof cur === 'object' ? (cur.text || '') : cur;
+            setTextForKey(this.dataset.textKey, this.dataset.textLang, t, { fontSize: parseInt(this.value) || '' });
+            refreshAllTexts();
+        });
+    });
+
+    // Color input
+    container.querySelectorAll('.tbc-color[data-style]').forEach(inp => {
+        inp.addEventListener('input', function() {
+            const cur = textBank[this.dataset.textKey]?.[this.dataset.textLang] || {};
+            const t   = typeof cur === 'object' ? (cur.text || '') : cur;
+            setTextForKey(this.dataset.textKey, this.dataset.textLang, t, { fill: this.value });
+            refreshAllTexts();
+        });
+    });
+
+    // Toggle buttons (bold, italic, underline)
+    container.querySelectorAll('.tbc-btn[data-on]').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const cur = textBank[this.dataset.textKey]?.[this.dataset.textLang] || {};
+            const t   = typeof cur === 'object' ? (cur.text || '') : cur;
+            const st  = typeof cur === 'object' ? cur : {};
+            const curVal = st[this.dataset.style];
+            const onVal  = this.dataset.on;
+            const offVal = this.dataset.off;
+            // Booleans for underline
+            let newVal;
+            if (onVal === 'true') {
+                newVal = !curVal;
+            } else {
+                newVal = (curVal === onVal) ? offVal : onVal;
+            }
+            setTextForKey(this.dataset.textKey, this.dataset.textLang, t, { [this.dataset.style]: newVal });
+            refreshAllTexts();
+            renderTextBankUI();
+        });
+    });
+
+    // Alignment buttons
+    container.querySelectorAll('.tbc-align[data-val]').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const cur = textBank[this.dataset.textKey]?.[this.dataset.textLang] || {};
+            const t   = typeof cur === 'object' ? (cur.text || '') : cur;
+            setTextForKey(this.dataset.textKey, this.dataset.textLang, t, { textAlign: this.dataset.val });
+            refreshAllTexts();
+            renderTextBankUI();
+        });
+    });
+
+    // Delete buttons
     container.querySelectorAll('button[data-delete-text-key]').forEach(btn => {
         btn.addEventListener('click', function() {
             if (confirm(`Delete text key "${this.dataset.deleteTextKey}"?`)) removeTextBankKey(this.dataset.deleteTextKey);
@@ -370,20 +447,32 @@ export function refreshAllTexts() {
     const canvas = getCanvas();
     if (!canvas) return;
     canvas.getObjects().forEach(obj => {
-        if (obj.textKey && obj.isDesignElement) {
-            var newText = getTextForKey(obj.textKey);
-            if (newText !== null) {
-                const styles = getTextStyleForKey(obj.textKey, currentLanguage);
-                const updates = { text: newText };
-                if (styles.fontSize) updates.fontSize = parseInt(styles.fontSize);
-                if (styles.fontWeight) updates.fontWeight = styles.fontWeight;
-                
-                obj.set(updates);
+        if (obj.textKey && obj.isDesignElement && obj.type === 'i-text') {
+            const newText = getTextForKey(obj.textKey);
+            if (newText === null) return;
+            const st = getTextStyleForKey(obj.textKey, currentLanguage);
+            const updates = { text: newText };
+            if (st.fontFamily)  updates.fontFamily  = st.fontFamily;
+            if (st.fontSize)    updates.fontSize     = parseInt(st.fontSize);
+            if (st.fill)        updates.fill         = st.fill;
+            if (st.fontWeight)  updates.fontWeight   = st.fontWeight;
+            if (st.fontStyle)   updates.fontStyle    = st.fontStyle;
+            if (st.underline !== undefined) updates.underline  = st.underline === true || st.underline === 'true';
+            if (st.linethrough !== undefined) updates.linethrough = st.linethrough === true || st.linethrough === 'true';
+            if (st.textAlign)   updates.textAlign    = st.textAlign;
+            if (st.lineHeight)  updates.lineHeight   = parseFloat(st.lineHeight);
+            if (st.charSpacing !== undefined) updates.charSpacing = parseInt(st.charSpacing);
+            if (st.shadow !== undefined) {
+                updates.shadow = st.shadow ? new fabric.Shadow(st.shadow) : null;
             }
+            if (st.stroke)      updates.stroke       = st.stroke;
+            if (st.strokeWidth !== undefined) updates.strokeWidth = parseFloat(st.strokeWidth);
+            obj.set(updates);
         }
     });
     canvas.renderAll();
 }
+
 
 export function renderLanguageGrid() {
     var grid = document.getElementById('languageGrid');

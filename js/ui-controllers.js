@@ -3,9 +3,11 @@ import {
     globalBgColor, setGlobalBgColor, bgMode, setBgMode, 
     gradColor1, setGradColors, gradColor2, gradAngle, setGradAngle,
     currentLanguage, setCurrentLanguage, languages, setLanguages,
-    imageBank, textBank, getImageForKey, getTextForKey, 
+    imageBank, textBank, getImageForKey, getTextForKey,
+    setTextForKey, getTextStyleForKey,
     DEVICE_CONFIG, SCREEN_PRESETS, currentPreset
 } from './state.js';
+
 import { 
     getCanvas, renderLayout, updateCanvasSize, 
     applyGlobalBackground, applyScreenPreset, addBgImageFromData 
@@ -175,36 +177,48 @@ export function initUI() {
         canvas.renderAll();
     });
 
+    // Helper: persist style change to textBank if text has a textKey
+    const saveStyleToBank = (obj, styles) => {
+        if (!obj?.textKey || obj.type !== 'i-text') return;
+        const cur = textBank[obj.textKey]?.[currentLanguage] || {};
+        const t   = typeof cur === 'object' ? (cur.text || obj.text || '') : (cur || obj.text || '');
+        setTextForKey(obj.textKey, currentLanguage, t, styles);
+    };
+
     document.getElementById('textFontFamily')?.addEventListener('change', (e) => {
-        const obj = canvas.getActiveObject(); if (obj?.type === 'i-text') { obj.set('fontFamily', e.target.value); canvas.renderAll(); }
+        const obj = canvas.getActiveObject(); if (obj?.type === 'i-text') { obj.set('fontFamily', e.target.value); saveStyleToBank(obj, { fontFamily: e.target.value }); canvas.renderAll(); }
     });
     document.getElementById('textFontSize')?.addEventListener('input', (e) => {
-        const obj = canvas.getActiveObject(); if (obj?.type === 'i-text') { obj.set('fontSize', parseInt(e.target.value)); canvas.renderAll(); }
+        const obj = canvas.getActiveObject(); if (obj?.type === 'i-text') { obj.set('fontSize', parseInt(e.target.value)); saveStyleToBank(obj, { fontSize: parseInt(e.target.value) }); canvas.renderAll(); }
     });
     document.getElementById('textColor')?.addEventListener('input', (e) => {
-        const obj = canvas.getActiveObject(); if (obj?.type === 'i-text') { obj.set('fill', e.target.value); canvas.renderAll(); }
+        const obj = canvas.getActiveObject(); if (obj?.type === 'i-text') { obj.set('fill', e.target.value); saveStyleToBank(obj, { fill: e.target.value }); canvas.renderAll(); }
     });
     document.getElementById('textBoldBtn')?.addEventListener('click', () => {
         const obj = canvas.getActiveObject(); if (obj?.type === 'i-text') {
-            obj.set('fontWeight', (obj.fontWeight === 'bold' || obj.fontWeight === '700') ? 'normal' : 'bold');
+            const fw = (obj.fontWeight === 'bold' || obj.fontWeight === '700') ? 'normal' : 'bold';
+            obj.set('fontWeight', fw); saveStyleToBank(obj, { fontWeight: fw });
             canvas.renderAll(); updateUIFromObject(obj);
         }
     });
     document.getElementById('textItalicBtn')?.addEventListener('click', () => {
         const obj = canvas.getActiveObject(); if (obj?.type === 'i-text') {
-            obj.set('fontStyle', obj.fontStyle === 'italic' ? 'normal' : 'italic');
+            const fs = obj.fontStyle === 'italic' ? 'normal' : 'italic';
+            obj.set('fontStyle', fs); saveStyleToBank(obj, { fontStyle: fs });
             canvas.renderAll(); updateUIFromObject(obj);
         }
     });
     document.getElementById('textUnderlineBtn')?.addEventListener('click', () => {
         const obj = canvas.getActiveObject(); if (obj?.type === 'i-text') {
-            obj.set('underline', !obj.underline);
+            const u = !obj.underline;
+            obj.set('underline', u); saveStyleToBank(obj, { underline: u });
             canvas.renderAll(); updateUIFromObject(obj);
         }
     });
     document.getElementById('textLineThroughBtn')?.addEventListener('click', () => {
         const obj = canvas.getActiveObject(); if (obj?.type === 'i-text') {
-            obj.set('linethrough', !obj.linethrough);
+            const lt = !obj.linethrough;
+            obj.set('linethrough', lt); saveStyleToBank(obj, { linethrough: lt });
             canvas.renderAll(); updateUIFromObject(obj);
         }
     });
@@ -212,15 +226,16 @@ export function initUI() {
         const align = id.replace('textAlign', '').toLowerCase();
         document.getElementById(id)?.addEventListener('click', () => {
             const obj = canvas.getActiveObject(); if (obj?.type === 'i-text') {
-                obj.set('textAlign', align); canvas.renderAll(); updateUIFromObject(obj);
+                obj.set('textAlign', align); saveStyleToBank(obj, { textAlign: align });
+                canvas.renderAll(); updateUIFromObject(obj);
             }
         });
     });
     document.getElementById('textLineHeight')?.addEventListener('input', (e) => {
-        const obj = canvas.getActiveObject(); if (obj?.type === 'i-text') { obj.set('lineHeight', parseFloat(e.target.value)); canvas.renderAll(); }
+        const obj = canvas.getActiveObject(); if (obj?.type === 'i-text') { obj.set('lineHeight', parseFloat(e.target.value)); saveStyleToBank(obj, { lineHeight: parseFloat(e.target.value) }); canvas.renderAll(); }
     });
     document.getElementById('textCharSpacing')?.addEventListener('input', (e) => {
-        const obj = canvas.getActiveObject(); if (obj?.type === 'i-text') { obj.set('charSpacing', parseInt(e.target.value)); canvas.renderAll(); }
+        const obj = canvas.getActiveObject(); if (obj?.type === 'i-text') { obj.set('charSpacing', parseInt(e.target.value)); saveStyleToBank(obj, { charSpacing: parseInt(e.target.value) }); canvas.renderAll(); }
     });
     // Shadow
     const applyShadow = () => {
