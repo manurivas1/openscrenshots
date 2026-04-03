@@ -430,11 +430,15 @@ export function initUI() {
     });
 
     // Layer Panel events
-    canvas.on('object:added', () => { if (!isRestoringHistory) renderLayerPanel(); });
+    canvas.on('object:added',   () => { if (!isRestoringHistory) renderLayerPanel(); });
     canvas.on('object:removed', () => { if (!isRestoringHistory) renderLayerPanel(); });
-    canvas.on('selection:created', () => renderLayerPanel());
-    canvas.on('selection:updated', () => renderLayerPanel());
-    canvas.on('selection:cleared', () => renderLayerPanel());
+    canvas.on('selection:created', (e) => { renderLayerPanel(); handleSelection(e); });
+    canvas.on('selection:updated', (e) => { renderLayerPanel(); handleSelection(e); });
+    canvas.on('selection:cleared', () => {
+        renderLayerPanel();
+        ['screenControls','elementControls','rotationControls','deviceSettings','textControls','shapeControls']
+            .forEach(id => document.getElementById(id)?.classList.add('hidden'));
+    });
 
     // Snapping Logic
     canvas.on('object:moving', (e) => {
