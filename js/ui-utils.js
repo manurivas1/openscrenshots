@@ -487,18 +487,6 @@ export function renderTextBankUI(editingKey) {
     });
 }
 
-    var container = document.getElementById('textBankTableContainer');
-    if (!container) return;
-    var keys = Object.keys(textBank);
-    if (keys.length === 0) {
-        container.innerHTML = '<div class="p-10 text-center"><p class="text-sm text-slate-400 italic">No text keys yet. Add one to get started.</p></div>';
-        return;
-    }
-
-
-
-
-
 export function renderLanguageGrid() {
     var grid = document.getElementById('languageGrid');
     if (!grid) return;
