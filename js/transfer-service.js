@@ -16,34 +16,33 @@ function renderScreenDataURL(screen) {
     const preset  = SCREEN_PRESETS[currentPreset];
 
     canvas.discardActiveObject();
+    
+    // Save original viewport state
+    const originalVT = [...canvas.viewportTransform];
+    
+    // Temporarily reset zoom/pan for exact export mapping
+    canvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
     canvas.renderAll();
 
-    // Convert Fabric object coordinates → HTML canvas pixel coordinates.
-    // canvas.viewportTransform = [scaleX, 0, 0, scaleY, panX, panY]
-    const vt = canvas.viewportTransform;
-    const zoom = vt[0];                       // current zoom factor
-    const panX = vt[4];
-    const panY = vt[5];
-
-    // Fabric object left/top are in *zoomed* canvas units already multiplied by zoom
-    // when the object was placed, so we must account for current zoom and pan.
-    const vpLeft   = screen.obj.left   * zoom + panX;
-    const vpTop    = screen.obj.top    * zoom + panY;
-    const vpWidth  = SCREEN_W * zoom;
-    const vpHeight = SCREEN_H * zoom;
-
-    // multiplier scales the viewport-pixel crop up to the final preset resolution
-    const multiplier = preset.w / vpWidth;
-
-    return canvas.toDataURL({
-        left:       vpLeft,
-        top:        vpTop,
-        width:      vpWidth,
-        height:     vpHeight,
+    // Export with unscaled dimensions + multiplier
+    // Final result is exactly SCREEN_W * multiplier x SCREEN_H * multiplier
+    const multiplier = preset.w / SCREEN_W;
+    
+    const dataURL = canvas.toDataURL({
+        left:       screen.obj.left,
+        top:        screen.obj.top,
+        width:      SCREEN_W,
+        height:     SCREEN_H,
         format:     'png',
         quality:    1,
         multiplier: multiplier
     });
+
+    // Restore viewport
+    canvas.setViewportTransform(originalVT);
+    canvas.renderAll();
+
+    return dataURL;
 }
 
 function dataURLtoBytes(dataURL) {

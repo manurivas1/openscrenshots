@@ -105,8 +105,7 @@ export function applyScreenPreset(presetKey, SCREEN_PRESETS) {
     var p = SCREEN_PRESETS[presetKey];
     var ratio = p.w / p.h;
     const h = 740;
-    const w = Math.round(h * ratio);
-    setScreenDimensions(w, h);
+    setScreenDimensions(h * ratio, h);
     
     screensData.forEach(function(s) {
         if (s.obj) { canvas.remove(s.obj); s.obj = null; }

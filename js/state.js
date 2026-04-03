@@ -23,8 +23,9 @@ export const DEVICE_CONFIG = {
 };
 
 export let currentPreset = 'iphone67';
-export let SCREEN_W = 340;
 export let SCREEN_H = 740;
+export let SCREEN_W = 740 * (1284 / 2778); // Exact ratio for initial preset
+
 export const GAP = 40;
 export const START_Y = 60;
 export let canvasZoom = 1.0;
@@ -37,13 +38,14 @@ export let gradColor2 = '#ec4899';
 export let gradAngle = 180;
 
 export const SCREEN_PRESETS = {
-    iphone67: { w: 1290, h: 2796, label: 'iPhone 6.7"' },
+    iphone67: { w: 1284, h: 2778, label: 'iPhone 6.7"' },
     iphone65: { w: 1242, h: 2688, label: 'iPhone 6.5"' },
     iphone55: { w: 1242, h: 2208, label: 'iPhone 5.5"' },
     ipad129:  { w: 2048, h: 2732, label: 'iPad 12.9"' },
     ipad11:   { w: 1668, h: 2388, label: 'iPad 11"' },
-    custom:   { w: 1290, h: 2796, label: 'Custom' }
+    custom:   { w: 1284, h: 2778, label: 'Custom' }
 };
+
 
 export const ALL_LANGUAGES = [
     { code: 'en', flag: '🇺🇸', name: 'English' },
