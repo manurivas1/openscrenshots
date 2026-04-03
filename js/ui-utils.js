@@ -291,7 +291,7 @@ export function renderTextBankUI(editingKey) {
     function buildPreviewStyle(st) {
         const ff   = st.fontFamily  || '"Inter",sans-serif';
         const fs   = Math.min(parseInt(st.fontSize) || 16, 40); // cap at 40px for preview
-        const fc   = st.fill        || '#ffffff';
+        const fc   = st.fill        || '#1e293b';
         const fw   = (st.fontWeight === 'bold' || st.fontWeight === '700') ? 'bold' : 'normal';
         const fi   = st.fontStyle === 'italic' ? 'italic' : 'normal';
         const ta   = st.textAlign   || 'left';
@@ -312,7 +312,7 @@ export function renderTextBankUI(editingKey) {
             var st     = typeof raw === 'object' ? raw : {};
             var ff     = st.fontFamily  || '';
             var fs     = st.fontSize    || '';
-            var fc     = st.fill        || '#ffffff';
+            var fc     = st.fill        || '#1e293b';
             var isBold   = st.fontWeight === 'bold' || st.fontWeight === '700';
             var isItalic = st.fontStyle === 'italic';
             var isUnder  = !!st.underline;
@@ -382,9 +382,8 @@ export function renderTextBankUI(editingKey) {
     // ── contenteditable: save plain text on input ──────────────────────
     container.querySelectorAll('.rte-preview').forEach(div => {
         div.addEventListener('input', function() {
-            const cur = textBank[this.dataset.textKey]?.[this.dataset.textLang] || {};
-            const st  = typeof cur === 'object' ? cur : {};
-            setTextForKey(this.dataset.textKey, this.dataset.textLang, this.innerText, st);
+            // Only save the text — setTextForKey merges with existing styles via ...current
+            setTextForKey(this.dataset.textKey, this.dataset.textLang, this.innerText);
         });
         div.addEventListener('blur', refreshAllTexts);
         // Paste as plain text only
@@ -485,6 +484,36 @@ export function renderTextBankUI(editingKey) {
             if (confirm(`Delete text key "${this.dataset.deleteTextKey}"?`)) removeTextBankKey(this.dataset.deleteTextKey);
         });
     });
+}
+
+export function refreshAllTexts() {
+    const canvas = getCanvas();
+    if (!canvas) return;
+    canvas.getObjects().forEach(obj => {
+        if (obj.textKey && obj.isDesignElement && obj.type === 'i-text') {
+            const newText = getTextForKey(obj.textKey);
+            if (newText === null) return;
+            const st = getTextStyleForKey(obj.textKey, currentLanguage);
+            const updates = { text: newText };
+            if (st.fontFamily)  updates.fontFamily  = st.fontFamily;
+            if (st.fontSize)    updates.fontSize     = parseInt(st.fontSize);
+            if (st.fill)        updates.fill         = st.fill;
+            if (st.fontWeight)  updates.fontWeight   = st.fontWeight;
+            if (st.fontStyle)   updates.fontStyle    = st.fontStyle;
+            if (st.underline !== undefined) updates.underline    = st.underline === true || st.underline === 'true';
+            if (st.linethrough !== undefined) updates.linethrough = st.linethrough === true || st.linethrough === 'true';
+            if (st.textAlign)   updates.textAlign    = st.textAlign;
+            if (st.lineHeight)  updates.lineHeight   = parseFloat(st.lineHeight);
+            if (st.charSpacing !== undefined) updates.charSpacing = parseInt(st.charSpacing);
+            if (st.shadow !== undefined) {
+                updates.shadow = st.shadow ? new fabric.Shadow(st.shadow) : null;
+            }
+            if (st.stroke)      updates.stroke       = st.stroke;
+            if (st.strokeWidth !== undefined) updates.strokeWidth = parseFloat(st.strokeWidth);
+            obj.set(updates);
+        }
+    });
+    canvas.renderAll();
 }
 
 export function renderLanguageGrid() {
