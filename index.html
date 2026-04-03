@@ -332,6 +332,38 @@
             border-color: #4338ca;
         }
         .tbc-align { flex: 1; text-align: center; }
+
+        /* WYSIWYG rich text preview */
+        .rte-preview {
+            min-height: 72px;
+            max-height: 160px;
+            overflow-y: auto;
+            border-radius: 8px;
+            padding: 10px 12px;
+            cursor: text;
+            outline: none;
+            word-break: break-word;
+            white-space: pre-wrap;
+            background: linear-gradient(135deg, #1e1b4b 0%, #312e81 60%, #1e293b 100%);
+            border: 1.5px solid transparent;
+            transition: border-color 0.15s;
+            line-height: 1.3;
+        }
+        .rte-preview:focus {
+            border-color: #818cf8;
+            box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.2);
+        }
+        .rte-preview:empty::before {
+            content: "Type here…";
+            color: rgba(255,255,255,0.3);
+            pointer-events: none;
+        }
+        .tbc-toolbar {
+            margin-top: 5px;
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
     </style>
 </head>
 

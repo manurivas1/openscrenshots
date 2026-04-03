@@ -284,8 +284,20 @@ export function renderTextBankUI(editingKey) {
         return;
     }
 
-    var headerCells = '<th class="pl-3">Key</th>' +
-        languages.map(lang => `<th style="min-width:210px">${getLangInfo(lang).flag} ${lang.toUpperCase()}</th>`).join('') + '<th></th>';
+    var headerCells = '<th class="pl-3" style="min-width:90px">Key</th>' +
+        languages.map(lang => `<th style="min-width:220px">${getLangInfo(lang).flag} ${lang.toUpperCase()}</th>`).join('') + '<th style="width:28px"></th>';
+
+    // Helper: build inline CSS from stored style
+    function buildPreviewStyle(st) {
+        const ff   = st.fontFamily  || '"Inter",sans-serif';
+        const fs   = Math.min(parseInt(st.fontSize) || 16, 40); // cap at 40px for preview
+        const fc   = st.fill        || '#ffffff';
+        const fw   = (st.fontWeight === 'bold' || st.fontWeight === '700') ? 'bold' : 'normal';
+        const fi   = st.fontStyle === 'italic' ? 'italic' : 'normal';
+        const ta   = st.textAlign   || 'left';
+        const deco = [st.underline ? 'underline' : '', st.linethrough ? 'line-through' : ''].filter(Boolean).join(' ') || 'none';
+        return `font-family:${ff};font-size:${fs}px;color:${fc};font-weight:${fw};font-style:${fi};text-align:${ta};text-decoration:${deco};`;
+    }
 
     var rows = keys.map(key => {
         var isEditing = (key === editingKey);
@@ -294,22 +306,26 @@ export function renderTextBankUI(editingKey) {
             : `<td class="pl-3"><span class="text-xs font-mono font-bold text-slate-700">${key}</span></td>`;
 
         var cells = keyCell + languages.map(lang => {
-            var raw = textBank[key][lang] || {};
-            var val = (typeof raw === 'object' ? (raw.text || '') : raw).replace(/"/g, '&quot;');
-            var st  = typeof raw === 'object' ? raw : {};
-            var ff  = st.fontFamily  || '';
-            var fs  = st.fontSize    || '';
-            var fc  = st.fill        || '#ffffff';
+            const pid  = `rte_${key}_${lang}`.replace(/[^a-z0-9]/g, '_');
+            var raw    = textBank[key][lang] || {};
+            var val    = (typeof raw === 'object' ? (raw.text || '') : raw);
+            var st     = typeof raw === 'object' ? raw : {};
+            var ff     = st.fontFamily  || '';
+            var fs     = st.fontSize    || '';
+            var fc     = st.fill        || '#ffffff';
             var isBold   = st.fontWeight === 'bold' || st.fontWeight === '700';
             var isItalic = st.fontStyle === 'italic';
             var isUnder  = !!st.underline;
             var ta       = st.textAlign || '';
-            var on  = 'tbc-btn active';
-            var off = 'tbc-btn';
+            var AB = 'tbc-btn active', OB = 'tbc-btn';
+
             return `<td class="tbc-cell">
-                <textarea class="text-cell" data-text-key="${key}" data-text-lang="${lang}" placeholder="...">${val}</textarea>
-                <div class="tbc-styles">
-                    <select class="tbc-select" data-text-key="${key}" data-text-lang="${lang}" data-style="fontFamily" title="Font Family">
+                <div id="${pid}" class="rte-preview" contenteditable="true"
+                     data-text-key="${key}" data-text-lang="${lang}"
+                     style="${buildPreviewStyle(st)}"
+                >${val.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
+                <div class="tbc-toolbar">
+                    <select class="tbc-select" data-pid="${pid}" data-text-key="${key}" data-text-lang="${lang}" title="Font">
                         <option value="">Font…</option>
                         <option value='"Inter",sans-serif'${ff.includes('Inter')?' selected':''}>Inter</option>
                         <option value='"SF Pro Display",system-ui'${ff.includes('SF Pro')?' selected':''}>SF Pro</option>
@@ -323,23 +339,23 @@ export function renderTextBankUI(editingKey) {
                         <option value='Verdana,sans-serif'${ff==='Verdana,sans-serif'?' selected':''}>Verdana</option>
                     </select>
                     <div class="tbc-row">
-                        <input type="number" class="tbc-num" placeholder="Sz" title="Font Size"
-                               data-text-key="${key}" data-text-lang="${lang}" data-style="fontSize" value="${fs}" min="6" max="400">
-                        <input type="color" class="tbc-color" title="Color"
-                               data-text-key="${key}" data-text-lang="${lang}" data-style="fill" value="${fc}">
-                        <button class="${isBold?on:off}"   data-text-key="${key}" data-text-lang="${lang}" data-style="fontWeight" data-on="bold"   data-off="normal" title="Bold"><b>B</b></button>
-                        <button class="${isItalic?on:off}" data-text-key="${key}" data-text-lang="${lang}" data-style="fontStyle"  data-on="italic" data-off="normal" title="Italic"><i>I</i></button>
-                        <button class="${isUnder?on:off}"  data-text-key="${key}" data-text-lang="${lang}" data-style="underline"  data-on="true"   data-off=""       title="Underline"><u>U</u></button>
+                        <input type="number" class="tbc-num" placeholder="Sz" title="Font Size (canvas px)"
+                               data-pid="${pid}" data-text-key="${key}" data-text-lang="${lang}" value="${fs}" min="6" max="400" step="1">
+                        <input type="color" class="tbc-color" title="Text Color"
+                               data-pid="${pid}" data-text-key="${key}" data-text-lang="${lang}" value="${fc}">
+                        <button class="${isBold?AB:OB}"   data-pid="${pid}" data-text-key="${key}" data-text-lang="${lang}" data-prop="fontWeight" data-on="bold"   data-off="normal" title="Bold"><b>B</b></button>
+                        <button class="${isItalic?AB:OB}" data-pid="${pid}" data-text-key="${key}" data-text-lang="${lang}" data-prop="fontStyle"  data-on="italic" data-off="normal" title="Italic"><i>I</i></button>
+                        <button class="${isUnder?AB:OB}"  data-pid="${pid}" data-text-key="${key}" data-text-lang="${lang}" data-prop="underline"  data-on="true"   data-off=""       title="Underline"><u>U</u></button>
                     </div>
                     <div class="tbc-row">
-                        <button class="${ta==='left'?on:off}   tbc-align" data-text-key="${key}" data-text-lang="${lang}" data-style="textAlign" data-val="left"   title="Left">⬅</button>
-                        <button class="${ta==='center'?on:off} tbc-align" data-text-key="${key}" data-text-lang="${lang}" data-style="textAlign" data-val="center" title="Center">≡</button>
-                        <button class="${ta==='right'?on:off}  tbc-align" data-text-key="${key}" data-text-lang="${lang}" data-style="textAlign" data-val="right"  title="Right">➡</button>
+                        <button class="${ta==='left'?AB:OB}   tbc-align" data-pid="${pid}" data-text-key="${key}" data-text-lang="${lang}" data-val="left"   title="Left">⬅</button>
+                        <button class="${ta==='center'?AB:OB} tbc-align" data-pid="${pid}" data-text-key="${key}" data-text-lang="${lang}" data-val="center" title="Center">≡</button>
+                        <button class="${ta==='right'?AB:OB}  tbc-align" data-pid="${pid}" data-text-key="${key}" data-text-lang="${lang}" data-val="right"  title="Right">➡</button>
                     </div>
                 </div>
             </td>`;
         }).join('') +
-        `<td><button class="text-red-400 hover:text-red-600 text-sm font-bold px-1" data-delete-text-key="${key}" title="Delete">×</button></td>`;
+        `<td style="vertical-align:top;padding-top:10px"><button class="text-red-400 hover:text-red-600 text-sm font-bold px-1" data-delete-text-key="${key}" title="Delete">×</button></td>`;
         return `<tr>${cells}</tr>`;
     }).join('');
 
@@ -354,8 +370,7 @@ export function renderTextBankUI(editingKey) {
             var data = textBank[editingKey];
             delete textBank[editingKey];
             if (newName && !textBank[newName]) textBank[newName] = data || {};
-            renderTextBankUI();
-            updateTextKeySelects();
+            renderTextBankUI(); updateTextKeySelects();
         };
         inlineInput.addEventListener('keydown', e => {
             if (e.key === 'Enter') { e.preventDefault(); confirmTextKey(); }
@@ -364,78 +379,107 @@ export function renderTextBankUI(editingKey) {
         inlineInput.addEventListener('blur', confirmTextKey);
     }
 
-    // Textarea: save text
-    container.querySelectorAll('textarea[data-text-key]').forEach(ta => {
-        ta.addEventListener('input', function() {
-            setTextForKey(this.dataset.textKey, this.dataset.textLang, this.value);
+    // ── contenteditable: save plain text on input ──────────────────────
+    container.querySelectorAll('.rte-preview').forEach(div => {
+        div.addEventListener('input', function() {
+            const cur = textBank[this.dataset.textKey]?.[this.dataset.textLang] || {};
+            const st  = typeof cur === 'object' ? cur : {};
+            setTextForKey(this.dataset.textKey, this.dataset.textLang, this.innerText, st);
         });
-        ta.addEventListener('blur', refreshAllTexts);
+        div.addEventListener('blur', refreshAllTexts);
+        // Paste as plain text only
+        div.addEventListener('paste', function(e) {
+            e.preventDefault();
+            const text = (e.clipboardData || window.clipboardData).getData('text/plain');
+            document.execCommand('insertText', false, text);
+        });
     });
 
-    // Font family select
-    container.querySelectorAll('.tbc-select[data-style]').forEach(sel => {
+    // ── Font family select ─────────────────────────────────────────────
+    container.querySelectorAll('.tbc-select').forEach(sel => {
         sel.addEventListener('change', function() {
+            const preview = document.getElementById(this.dataset.pid);
+            if (preview) preview.style.fontFamily = this.value || 'inherit';
             const cur = textBank[this.dataset.textKey]?.[this.dataset.textLang] || {};
-            const t   = typeof cur === 'object' ? (cur.text || '') : cur;
-            setTextForKey(this.dataset.textKey, this.dataset.textLang, t, { [this.dataset.style]: this.value });
+            const t   = typeof cur === 'object' ? (cur.text || preview?.innerText || '') : cur;
+            setTextForKey(this.dataset.textKey, this.dataset.textLang, t, { fontFamily: this.value });
             refreshAllTexts();
         });
     });
 
-    // Number size input
-    container.querySelectorAll('.tbc-num[data-style]').forEach(inp => {
+    // ── Font size ──────────────────────────────────────────────────────
+    container.querySelectorAll('.tbc-num').forEach(inp => {
         inp.addEventListener('input', function() {
+            const preview = document.getElementById(this.dataset.pid);
+            const val = parseInt(this.value) || 16;
+            if (preview) preview.style.fontSize = Math.min(val, 40) + 'px'; // cap preview at 40px
             const cur = textBank[this.dataset.textKey]?.[this.dataset.textLang] || {};
-            const t   = typeof cur === 'object' ? (cur.text || '') : cur;
-            setTextForKey(this.dataset.textKey, this.dataset.textLang, t, { fontSize: parseInt(this.value) || '' });
+            const t   = typeof cur === 'object' ? (cur.text || preview?.innerText || '') : cur;
+            setTextForKey(this.dataset.textKey, this.dataset.textLang, t, { fontSize: val });
             refreshAllTexts();
         });
     });
 
-    // Color input
-    container.querySelectorAll('.tbc-color[data-style]').forEach(inp => {
+    // ── Color ──────────────────────────────────────────────────────────
+    container.querySelectorAll('.tbc-color').forEach(inp => {
         inp.addEventListener('input', function() {
+            const preview = document.getElementById(this.dataset.pid);
+            if (preview) preview.style.color = this.value;
             const cur = textBank[this.dataset.textKey]?.[this.dataset.textLang] || {};
-            const t   = typeof cur === 'object' ? (cur.text || '') : cur;
+            const t   = typeof cur === 'object' ? (cur.text || preview?.innerText || '') : cur;
             setTextForKey(this.dataset.textKey, this.dataset.textLang, t, { fill: this.value });
             refreshAllTexts();
         });
     });
 
-    // Toggle buttons (bold, italic, underline)
-    container.querySelectorAll('.tbc-btn[data-on]').forEach(btn => {
+    // ── Toggle buttons: bold, italic, underline ────────────────────────
+    container.querySelectorAll('.tbc-btn[data-prop]').forEach(btn => {
         btn.addEventListener('click', function() {
+            const preview = document.getElementById(this.dataset.pid);
             const cur = textBank[this.dataset.textKey]?.[this.dataset.textLang] || {};
-            const t   = typeof cur === 'object' ? (cur.text || '') : cur;
             const st  = typeof cur === 'object' ? cur : {};
-            const curVal = st[this.dataset.style];
-            const onVal  = this.dataset.on;
-            const offVal = this.dataset.off;
-            // Booleans for underline
+            const t   = typeof cur === 'object' ? (cur.text || preview?.innerText || '') : cur;
+            const prop = this.dataset.prop;
+            const onV  = this.dataset.on;
+            const offV = this.dataset.off;
             let newVal;
-            if (onVal === 'true') {
-                newVal = !curVal;
+            if (onV === 'true') {
+                newVal = !st[prop]; // boolean underline
             } else {
-                newVal = (curVal === onVal) ? offVal : onVal;
+                newVal = (st[prop] === onV) ? offV : onV;
             }
-            setTextForKey(this.dataset.textKey, this.dataset.textLang, t, { [this.dataset.style]: newVal });
+            setTextForKey(this.dataset.textKey, this.dataset.textLang, t, { [prop]: newVal });
+            // Update preview style live
+            if (preview) {
+                if (prop === 'fontWeight') preview.style.fontWeight = newVal;
+                if (prop === 'fontStyle')  preview.style.fontStyle  = newVal;
+                if (prop === 'underline') {
+                    const lt = st.linethrough;
+                    preview.style.textDecoration = [newVal ? 'underline' : '', lt ? 'line-through' : ''].filter(Boolean).join(' ') || 'none';
+                }
+            }
+            this.classList.toggle('active', newVal === onV || newVal === true);
             refreshAllTexts();
-            renderTextBankUI();
         });
     });
 
-    // Alignment buttons
-    container.querySelectorAll('.tbc-align[data-val]').forEach(btn => {
+    // ── Alignment buttons ──────────────────────────────────────────────
+    container.querySelectorAll('.tbc-align').forEach(btn => {
         btn.addEventListener('click', function() {
+            const preview = document.getElementById(this.dataset.pid);
+            if (preview) preview.style.textAlign = this.dataset.val;
             const cur = textBank[this.dataset.textKey]?.[this.dataset.textLang] || {};
-            const t   = typeof cur === 'object' ? (cur.text || '') : cur;
+            const t   = typeof cur === 'object' ? (cur.text || preview?.innerText || '') : cur;
             setTextForKey(this.dataset.textKey, this.dataset.textLang, t, { textAlign: this.dataset.val });
+            // Update sibling align buttons active state
+            this.closest('.tbc-row')?.querySelectorAll('.tbc-align').forEach(b => {
+                b.classList.toggle('active', b.dataset.val === this.dataset.val);
+            });
             refreshAllTexts();
-            renderTextBankUI();
         });
     });
 
-    // Delete buttons
+    // ── Delete buttons ─────────────────────────────────────────────────
     container.querySelectorAll('button[data-delete-text-key]').forEach(btn => {
         btn.addEventListener('click', function() {
             if (confirm(`Delete text key "${this.dataset.deleteTextKey}"?`)) removeTextBankKey(this.dataset.deleteTextKey);
@@ -443,35 +487,16 @@ export function renderTextBankUI(editingKey) {
     });
 }
 
-export function refreshAllTexts() {
-    const canvas = getCanvas();
-    if (!canvas) return;
-    canvas.getObjects().forEach(obj => {
-        if (obj.textKey && obj.isDesignElement && obj.type === 'i-text') {
-            const newText = getTextForKey(obj.textKey);
-            if (newText === null) return;
-            const st = getTextStyleForKey(obj.textKey, currentLanguage);
-            const updates = { text: newText };
-            if (st.fontFamily)  updates.fontFamily  = st.fontFamily;
-            if (st.fontSize)    updates.fontSize     = parseInt(st.fontSize);
-            if (st.fill)        updates.fill         = st.fill;
-            if (st.fontWeight)  updates.fontWeight   = st.fontWeight;
-            if (st.fontStyle)   updates.fontStyle    = st.fontStyle;
-            if (st.underline !== undefined) updates.underline  = st.underline === true || st.underline === 'true';
-            if (st.linethrough !== undefined) updates.linethrough = st.linethrough === true || st.linethrough === 'true';
-            if (st.textAlign)   updates.textAlign    = st.textAlign;
-            if (st.lineHeight)  updates.lineHeight   = parseFloat(st.lineHeight);
-            if (st.charSpacing !== undefined) updates.charSpacing = parseInt(st.charSpacing);
-            if (st.shadow !== undefined) {
-                updates.shadow = st.shadow ? new fabric.Shadow(st.shadow) : null;
-            }
-            if (st.stroke)      updates.stroke       = st.stroke;
-            if (st.strokeWidth !== undefined) updates.strokeWidth = parseFloat(st.strokeWidth);
-            obj.set(updates);
-        }
-    });
-    canvas.renderAll();
-}
+    var container = document.getElementById('textBankTableContainer');
+    if (!container) return;
+    var keys = Object.keys(textBank);
+    if (keys.length === 0) {
+        container.innerHTML = '<div class="p-10 text-center"><p class="text-sm text-slate-400 italic">No text keys yet. Add one to get started.</p></div>';
+        return;
+    }
+
+
+
 
 
 export function renderLanguageGrid() {
