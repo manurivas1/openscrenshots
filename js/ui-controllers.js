@@ -187,8 +187,68 @@ export function initUI() {
     document.getElementById('textBoldBtn')?.addEventListener('click', () => {
         const obj = canvas.getActiveObject(); if (obj?.type === 'i-text') {
             obj.set('fontWeight', (obj.fontWeight === 'bold' || obj.fontWeight === '700') ? 'normal' : 'bold');
-            canvas.renderAll(); handleSelection({ selected: [obj] });
+            canvas.renderAll(); updateUIFromObject(obj);
         }
+    });
+    document.getElementById('textItalicBtn')?.addEventListener('click', () => {
+        const obj = canvas.getActiveObject(); if (obj?.type === 'i-text') {
+            obj.set('fontStyle', obj.fontStyle === 'italic' ? 'normal' : 'italic');
+            canvas.renderAll(); updateUIFromObject(obj);
+        }
+    });
+    document.getElementById('textUnderlineBtn')?.addEventListener('click', () => {
+        const obj = canvas.getActiveObject(); if (obj?.type === 'i-text') {
+            obj.set('underline', !obj.underline);
+            canvas.renderAll(); updateUIFromObject(obj);
+        }
+    });
+    document.getElementById('textLineThroughBtn')?.addEventListener('click', () => {
+        const obj = canvas.getActiveObject(); if (obj?.type === 'i-text') {
+            obj.set('linethrough', !obj.linethrough);
+            canvas.renderAll(); updateUIFromObject(obj);
+        }
+    });
+    ['textAlignLeft', 'textAlignCenter', 'textAlignRight'].forEach(id => {
+        const align = id.replace('textAlign', '').toLowerCase();
+        document.getElementById(id)?.addEventListener('click', () => {
+            const obj = canvas.getActiveObject(); if (obj?.type === 'i-text') {
+                obj.set('textAlign', align); canvas.renderAll(); updateUIFromObject(obj);
+            }
+        });
+    });
+    document.getElementById('textLineHeight')?.addEventListener('input', (e) => {
+        const obj = canvas.getActiveObject(); if (obj?.type === 'i-text') { obj.set('lineHeight', parseFloat(e.target.value)); canvas.renderAll(); }
+    });
+    document.getElementById('textCharSpacing')?.addEventListener('input', (e) => {
+        const obj = canvas.getActiveObject(); if (obj?.type === 'i-text') { obj.set('charSpacing', parseInt(e.target.value)); canvas.renderAll(); }
+    });
+    // Shadow
+    const applyShadow = () => {
+        const obj = canvas.getActiveObject(); if (obj?.type !== 'i-text') return;
+        const color = document.getElementById('textShadowColor')?.value || '#000000';
+        const blur  = parseFloat(document.getElementById('textShadowBlur')?.value) || 0;
+        const offX  = parseFloat(document.getElementById('textShadowOffX')?.value) || 0;
+        const offY  = parseFloat(document.getElementById('textShadowOffY')?.value) || 0;
+        if (blur === 0 && offX === 0 && offY === 0) {
+            obj.set('shadow', null);
+        } else {
+            obj.set('shadow', new fabric.Shadow({ color, blur, offsetX: offX, offsetY: offY }));
+        }
+        canvas.renderAll();
+    };
+    ['textShadowColor', 'textShadowBlur', 'textShadowOffX', 'textShadowOffY'].forEach(id => {
+        document.getElementById(id)?.addEventListener('input', applyShadow);
+    });
+    // Stroke (outline)
+    const applyStroke = () => {
+        const obj = canvas.getActiveObject(); if (obj?.type !== 'i-text') return;
+        const color = document.getElementById('textStrokeColor')?.value || '#000000';
+        const width = parseFloat(document.getElementById('textStrokeWidth')?.value) || 0;
+        obj.set({ stroke: width > 0 ? color : null, strokeWidth: width > 0 ? width : 0 });
+        canvas.renderAll();
+    };
+    ['textStrokeColor', 'textStrokeWidth'].forEach(id => {
+        document.getElementById(id)?.addEventListener('input', applyStroke);
     });
 
     document.getElementById('shapeFillColor')?.addEventListener('input', function() {
@@ -392,10 +452,18 @@ function switchView(view) {
 
 function handleSelection(e) {
     const obj = e.selected[0]; if (!obj) return;
-    ['screenControls', 'elementControls', 'rotationControls', 'deviceSettings'].forEach(id => document.getElementById(id)?.classList.add('hidden'));
-    if (obj.isScreen) document.getElementById('screenControls')?.classList.remove('hidden');
-    else if (obj.isDesignElement) {
+    ['screenControls', 'elementControls', 'rotationControls', 'deviceSettings', 'textControls', 'shapeControls'].forEach(id => document.getElementById(id)?.classList.add('hidden'));
+    if (obj.isScreen) {
+        document.getElementById('screenControls')?.classList.remove('hidden');
+    } else if (obj.isDesignElement) {
         document.getElementById('elementControls')?.classList.remove('hidden');
+        if (obj.type === 'i-text') {
+            document.getElementById('textControls')?.classList.remove('hidden');
+            updateUIFromObject(obj);
+        }
+        if (obj.isShape || obj.isLaurel) {
+            document.getElementById('shapeControls')?.classList.remove('hidden');
+        }
         if (obj.is3DModel) {
             document.getElementById('deviceSettings')?.classList.remove('hidden');
             updateUIFromObject(obj);
@@ -404,15 +472,53 @@ function handleSelection(e) {
 }
 
 function updateUIFromObject(obj) {
-    const frameEl = document.getElementById('frameColorInput');
-    if (frameEl) frameEl.value = obj.frameColor;
-    const keyEl = document.getElementById('deviceKeySelect');
-    if (keyEl) keyEl.value = obj.imageKey || '';
-    
-    const rotControls = document.getElementById('rotationControls');
-    if (obj.is2DMode) rotControls?.classList.add('hidden'); else {
-        rotControls?.classList.remove('hidden');
-        ['rotX', 'rotY', 'rotZ'].forEach(id => { document.getElementById(id).value = obj[id]; });
+    // 3D device
+    if (obj.is3DModel) {
+        const frameEl = document.getElementById('frameColorInput');
+        if (frameEl) frameEl.value = obj.frameColor;
+        const keyEl = document.getElementById('deviceKeySelect');
+        if (keyEl) keyEl.value = obj.imageKey || '';
+        const rotControls = document.getElementById('rotationControls');
+        if (obj.is2DMode) rotControls?.classList.add('hidden'); else {
+            rotControls?.classList.remove('hidden');
+            ['rotX', 'rotY', 'rotZ'].forEach(id => { document.getElementById(id).value = obj[id]; });
+        }
+        return;
+    }
+    // Text
+    if (obj.type === 'i-text') {
+        const set = (id, val) => { const el = document.getElementById(id); if (el) el.value = val; };
+        const setActive = (id, active) => { const el = document.getElementById(id); if (el) el.classList.toggle('bg-blue-200', active); };
+
+        set('textFontFamily', obj.fontFamily || '"Inter", sans-serif');
+        set('textFontSize', obj.fontSize || 42);
+        // fill is a CSS hex string; convert if necessary
+        const fillHex = (typeof obj.fill === 'string' && obj.fill.startsWith('#')) ? obj.fill : '#ffffff';
+        set('textColor', fillHex);
+
+        setActive('textBoldBtn',        obj.fontWeight === 'bold' || obj.fontWeight === '700');
+        setActive('textItalicBtn',      obj.fontStyle === 'italic');
+        setActive('textUnderlineBtn',   !!obj.underline);
+        setActive('textLineThroughBtn', !!obj.linethrough);
+
+        ['textAlignLeft', 'textAlignCenter', 'textAlignRight'].forEach(id => {
+            const align = id.replace('textAlign', '').toLowerCase();
+            setActive(id, (obj.textAlign || 'left') === align);
+        });
+
+        set('textLineHeight',  obj.lineHeight  ?? 1.2);
+        set('textCharSpacing', obj.charSpacing ?? 0);
+
+        // Shadow
+        const sh = obj.shadow;
+        set('textShadowColor', (sh && sh.color) ? sh.color : '#000000');
+        set('textShadowBlur',  sh ? sh.blur  : 0);
+        set('textShadowOffX',  sh ? sh.offsetX : 0);
+        set('textShadowOffY',  sh ? sh.offsetY : 3);
+
+        // Stroke
+        set('textStrokeColor', obj.stroke || '#000000');
+        set('textStrokeWidth', obj.strokeWidth || 0);
     }
 }
 

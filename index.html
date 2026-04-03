@@ -559,26 +559,86 @@
                     <!-- Text-specific controls -->
                     <div id="textControls" class="hidden p-3 bg-blue-50 border border-blue-100 rounded-lg space-y-2">
                         <span class="text-xs font-semibold text-blue-800">✍️ Text Style</span>
-                        <div class="flex gap-2">
-                            <select id="textFontFamily"
-                                class="flex-1 text-xs p-1.5 rounded bg-white border border-blue-200 focus:outline-none focus:ring-1 focus:ring-blue-400">
-                                <option value='"Inter", sans-serif'>Inter</option>
-                                <option value='"SF Pro Display", system-ui'>SF Pro</option>
-                                <option value='Georgia, serif'>Georgia</option>
-                                <option value='"Courier New", monospace'>Courier</option>
-                                <option value='system-ui, sans-serif'>System</option>
-                                <option value='"Arial Black", sans-serif'>Arial Black</option>
-                            </select>
-                            <input type="number" id="textFontSize" value="42" min="8" max="200" step="1"
+
+                        <!-- Font family -->
+                        <select id="textFontFamily"
+                            class="w-full text-xs p-1.5 rounded bg-white border border-blue-200 focus:outline-none focus:ring-1 focus:ring-blue-400">
+                            <option value='"Inter", sans-serif'>Inter</option>
+                            <option value='"SF Pro Display", system-ui'>SF Pro Display</option>
+                            <option value='"Helvetica Neue", Helvetica, sans-serif'>Helvetica Neue</option>
+                            <option value='Arial, sans-serif'>Arial</option>
+                            <option value='"Arial Black", sans-serif'>Arial Black</option>
+                            <option value='Georgia, serif'>Georgia</option>
+                            <option value='"Times New Roman", serif'>Times New Roman</option>
+                            <option value='"Courier New", monospace'>Courier New</option>
+                            <option value='system-ui, sans-serif'>System UI</option>
+                            <option value='"Trebuchet MS", sans-serif'>Trebuchet MS</option>
+                            <option value='Verdana, sans-serif'>Verdana</option>
+                            <option value='Impact, sans-serif'>Impact</option>
+                        </select>
+
+                        <!-- Size + color -->
+                        <div class="flex gap-2 items-center">
+                            <label class="text-[10px] text-blue-600 shrink-0">Size</label>
+                            <input type="number" id="textFontSize" value="42" min="8" max="400" step="1"
+                                class="w-16 text-xs p-1.5 rounded bg-white border border-blue-200 focus:outline-none focus:ring-1 focus:ring-blue-400">
+                            <label class="text-[10px] text-blue-600 shrink-0">Color</label>
+                            <input type="color" id="textColor" value="#ffffff"
+                                class="flex-1 h-8 rounded cursor-pointer bg-white border border-blue-200">
+                        </div>
+
+                        <!-- Bold / Italic / Underline -->
+                        <div class="flex gap-1">
+                            <button id="textBoldBtn" title="Bold"
+                                class="flex-1 text-xs px-2 py-1.5 rounded font-bold bg-white border border-blue-200 hover:bg-blue-100 transition-colors">B</button>
+                            <button id="textItalicBtn" title="Italic"
+                                class="flex-1 text-xs px-2 py-1.5 rounded italic bg-white border border-blue-200 hover:bg-blue-100 transition-colors">I</button>
+                            <button id="textUnderlineBtn" title="Underline"
+                                class="flex-1 text-xs px-2 py-1.5 rounded underline bg-white border border-blue-200 hover:bg-blue-100 transition-colors">U</button>
+                            <button id="textLineThroughBtn" title="Strikethrough"
+                                class="flex-1 text-xs px-2 py-1.5 rounded line-through bg-white border border-blue-200 hover:bg-blue-100 transition-colors">S</button>
+                        </div>
+
+                        <!-- Alignment -->
+                        <div class="flex gap-1">
+                            <button id="textAlignLeft" title="Align Left"
+                                class="flex-1 text-xs px-2 py-1.5 rounded bg-white border border-blue-200 hover:bg-blue-100 transition-colors">⬅</button>
+                            <button id="textAlignCenter" title="Align Center"
+                                class="flex-1 text-xs px-2 py-1.5 rounded bg-white border border-blue-200 hover:bg-blue-100 transition-colors">≡</button>
+                            <button id="textAlignRight" title="Align Right"
+                                class="flex-1 text-xs px-2 py-1.5 rounded bg-white border border-blue-200 hover:bg-blue-100 transition-colors">➡</button>
+                        </div>
+
+                        <!-- Line height + Letter spacing -->
+                        <div class="flex gap-2 items-center">
+                            <label class="text-[10px] text-blue-600 shrink-0">Line h.</label>
+                            <input type="number" id="textLineHeight" value="1.2" min="0.5" max="4" step="0.05"
+                                class="w-16 text-xs p-1.5 rounded bg-white border border-blue-200 focus:outline-none focus:ring-1 focus:ring-blue-400">
+                            <label class="text-[10px] text-blue-600 shrink-0">Spacing</label>
+                            <input type="number" id="textCharSpacing" value="0" min="-200" max="1000" step="10"
                                 class="w-16 text-xs p-1.5 rounded bg-white border border-blue-200 focus:outline-none focus:ring-1 focus:ring-blue-400">
                         </div>
+
+                        <!-- Shadow -->
                         <div class="flex gap-2 items-center">
-                            <input type="color" id="textColor" value="#ffffff"
-                                class="w-8 h-8 rounded cursor-pointer bg-white border border-blue-200 shrink-0">
-                            <button id="textBoldBtn"
-                                class="flex-1 text-xs px-2 py-1.5 rounded font-bold bg-white border border-blue-200 hover:bg-blue-100 transition-colors">B</button>
-                            <button id="textItalicBtn"
-                                class="flex-1 text-xs px-2 py-1.5 rounded italic bg-white border border-blue-200 hover:bg-blue-100 transition-colors">I</button>
+                            <label class="text-[10px] text-blue-600 shrink-0">Shadow</label>
+                            <input type="color" id="textShadowColor" value="#000000"
+                                class="w-7 h-7 rounded cursor-pointer bg-white border border-blue-200 shrink-0">
+                            <input type="number" id="textShadowBlur" value="0" min="0" max="50" step="1"
+                                class="w-12 text-xs p-1.5 rounded bg-white border border-blue-200" title="Blur">
+                            <input type="number" id="textShadowOffX" value="0" min="-30" max="30" step="1"
+                                class="w-12 text-xs p-1.5 rounded bg-white border border-blue-200" title="X offset">
+                            <input type="number" id="textShadowOffY" value="3" min="-30" max="30" step="1"
+                                class="w-12 text-xs p-1.5 rounded bg-white border border-blue-200" title="Y offset">
+                        </div>
+
+                        <!-- Stroke (outline) -->
+                        <div class="flex gap-2 items-center">
+                            <label class="text-[10px] text-blue-600 shrink-0">Outline</label>
+                            <input type="color" id="textStrokeColor" value="#000000"
+                                class="w-7 h-7 rounded cursor-pointer bg-white border border-blue-200 shrink-0">
+                            <input type="number" id="textStrokeWidth" value="0" min="0" max="20" step="0.5"
+                                class="w-14 text-xs p-1.5 rounded bg-white border border-blue-200" title="Width (0 = none)">
                         </div>
                     </div>
 
