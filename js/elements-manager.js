@@ -1,9 +1,37 @@
 import { 
-    getTextForKey, getImageForKey, globalClipPath, 
+    getTextForKey, getImageForKey, imageBank, globalClipPath, 
     canvasZoom, currentLanguage 
 } from './state.js';
 import { getCanvas, renderLayout } from './canvas-core.js';
 import { updateThreeDevice, applyTextureToScreen, render3DToImage, phoneModel } from './three-engine.js';
+
+export function addImageBankElement(imageKey) {
+    const canvas = getCanvas();
+    const src = getImageForKey(imageKey);
+    if (!src) { alert(`No image found for key "${imageKey}"`); return; }
+
+    fabric.Image.fromURL(src, (img) => {
+        // Scale to fit nicely in the screen area
+        const maxW = 300, maxH = 400;
+        const scale = Math.min(maxW / img.width, maxH / img.height, 1);
+        img.set({
+            left: canvas.width / 2 - (img.width * scale) / 2,
+            top: 200,
+            scaleX: scale, scaleY: scale,
+            isDesignElement: true,
+            isFreeImage: true,
+            imageKey: imageKey,
+            clipPath: globalClipPath,
+            borderColor: '#6366f1', cornerColor: '#6366f1',
+            cornerStyle: 'circle', cornerSize: 10,
+            transparentCorners: false
+        });
+        canvas.add(img);
+        canvas.setActiveObject(img);
+        renderLayout();
+    }, { crossOrigin: 'anonymous' });
+}
+
 
 export function addTextElement(selectedKey = '') {
     const canvas = getCanvas();

@@ -1,8 +1,9 @@
 import { 
-    imageBank, textBank, languages, currentLanguage, 
+    imageBank, textBank, languages, currentLanguage, elementLayouts,
     getLangInfo, setTextBank, getImageForKey, getTextForKey, setTextForKey, getTextStyleForKey,
-    ALL_LANGUAGES, setCurrentLanguage, setLanguages
+    getElementLayout, ALL_LANGUAGES, setCurrentLanguage, setLanguages
 } from './state.js';
+
 import { getCanvas, renderLayout } from './canvas-core.js';
 import { syncAndRenderActiveDevice } from './elements-manager.js';
 
@@ -489,8 +490,30 @@ export function renderTextBankUI(editingKey) {
 export function refreshAllTexts() {
     const canvas = getCanvas();
     if (!canvas) return;
+
+    const pending = []; // for async image src updates
+
     canvas.getObjects().forEach(obj => {
-        if (obj.textKey && obj.isDesignElement && obj.type === 'i-text') {
+        if (!obj.isDesignElement) return;
+        const key = obj.textKey || obj.imageKey;
+
+        // ── 1. Apply per-language layout (position / scale / angle) ──────────
+        if (key) {
+            const layout = getElementLayout(key, currentLanguage);
+            if (layout) {
+                obj.set({
+                    left:   layout.left   ?? obj.left,
+                    top:    layout.top    ?? obj.top,
+                    scaleX: layout.scaleX ?? obj.scaleX,
+                    scaleY: layout.scaleY ?? obj.scaleY,
+                    angle:  layout.angle  ?? obj.angle
+                });
+                obj.setCoords();
+            }
+        }
+
+        // ── 2. Text: update content + styles ─────────────────────────────────
+        if (obj.textKey && obj.type === 'i-text') {
             const newText = getTextForKey(obj.textKey);
             if (newText === null) return;
             const st = getTextStyleForKey(obj.textKey, currentLanguage);
@@ -505,16 +528,27 @@ export function refreshAllTexts() {
             if (st.textAlign)   updates.textAlign    = st.textAlign;
             if (st.lineHeight)  updates.lineHeight   = parseFloat(st.lineHeight);
             if (st.charSpacing !== undefined) updates.charSpacing = parseInt(st.charSpacing);
-            if (st.shadow !== undefined) {
-                updates.shadow = st.shadow ? new fabric.Shadow(st.shadow) : null;
-            }
+            if (st.shadow !== undefined) updates.shadow = st.shadow ? new fabric.Shadow(st.shadow) : null;
             if (st.stroke)      updates.stroke       = st.stroke;
             if (st.strokeWidth !== undefined) updates.strokeWidth = parseFloat(st.strokeWidth);
             obj.set(updates);
         }
+
+        // ── 3. Image bank element: update src ─────────────────────────────────
+        if (obj.imageKey && obj.isFreeImage) {
+            const newSrc = getImageForKey(obj.imageKey);
+            if (newSrc && obj.getSrc() !== newSrc) {
+                pending.push(new Promise(resolve => {
+                    obj.setSrc(newSrc, () => { canvas.renderAll(); resolve(); });
+                }));
+            }
+        }
     });
+
     canvas.renderAll();
+    if (pending.length) Promise.all(pending).then(() => canvas.renderAll());
 }
+
 
 export function renderLanguageGrid() {
     var grid = document.getElementById('languageGrid');

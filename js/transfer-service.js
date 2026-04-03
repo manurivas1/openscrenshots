@@ -1,26 +1,45 @@
 /* global JSZip, fabric */
 import { 
     screensData, SCREEN_W, SCREEN_H, currentPreset, SCREEN_PRESETS,
-    currentLanguage, imageBank, textBank, languages, 
+    currentLanguage, imageBank, textBank, languages, elementLayouts,
     globalBgColor, bgMode, gradColor1, gradColor2, gradAngle,
     globalClipPath, setCurrentLanguage, setImageBank, setTextBank, setLanguages,
-    setGlobalBgColor, setBgMode, setGradColors, setGradAngle, setScreensData
+    setGlobalBgColor, setBgMode, setGradColors, setGradAngle, setScreensData, setElementLayouts
 } from './state.js';
+
 import { getCanvas, renderLayout, applyGlobalBackground } from './canvas-core.js';
 import { loadLocal3DModel, applyTextureToScreen, render3DToImage, phoneModel, phoneBodyMeshes } from './three-engine.js';
 import { getImageForKey } from './state.js';
 
 function renderScreenDataURL(screen) {
     const canvas = getCanvas();
-    var preset = SCREEN_PRESETS[currentPreset];
-    var multiplier = preset.w / SCREEN_W;
+    const preset  = SCREEN_PRESETS[currentPreset];
+
     canvas.discardActiveObject();
     canvas.renderAll();
+
+    // Convert Fabric object coordinates → HTML canvas pixel coordinates.
+    // canvas.viewportTransform = [scaleX, 0, 0, scaleY, panX, panY]
+    const vt = canvas.viewportTransform;
+    const zoom = vt[0];                       // current zoom factor
+    const panX = vt[4];
+    const panY = vt[5];
+
+    // Fabric object left/top are in *zoomed* canvas units already multiplied by zoom
+    // when the object was placed, so we must account for current zoom and pan.
+    const vpLeft   = screen.obj.left   * zoom + panX;
+    const vpTop    = screen.obj.top    * zoom + panY;
+    const vpWidth  = SCREEN_W * zoom;
+    const vpHeight = SCREEN_H * zoom;
+
+    // multiplier scales the viewport-pixel crop up to the final preset resolution
+    const multiplier = preset.w / vpWidth;
+
     return canvas.toDataURL({
-        left:       screen.obj.left,
-        top:        screen.obj.top,
-        width:      SCREEN_W,
-        height:     SCREEN_H,
+        left:       vpLeft,
+        top:        vpTop,
+        width:      vpWidth,
+        height:     vpHeight,
         format:     'png',
         quality:    1,
         multiplier: multiplier
@@ -123,7 +142,9 @@ export function exportProjectToJSON() {
         screensData: screensData.map(function(s) { return { id: s.id, color: s.color }; }),
         imageBank, textBank, languages, currentLanguage,
         globalBgColor, bgMode, gradColor1, gradColor2, gradAngle,
+        elementLayouts,
         elements: elements
+
     };
 
     var blob = new Blob([JSON.stringify(project, null, 2)], { type: 'application/json' });
@@ -159,7 +180,9 @@ export async function importProjectFromJSON(jsonString, updateUIFn) {
     document.getElementById('projectNameInput').value = project.name || 'Project';
     setImageBank(project.imageBank || {});
     setTextBank(project.textBank || {});
+    setElementLayouts(project.elementLayouts || {});
     setLanguages(project.languages || ['en']);
+
     setCurrentLanguage(project.currentLanguage || 'en');
     setGlobalBgColor(project.globalBgColor || '#e2e8f0');
     setBgMode(project.bgMode || 'solid');

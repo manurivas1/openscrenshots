@@ -5,8 +5,10 @@ import {
     currentLanguage, setCurrentLanguage, languages, setLanguages,
     imageBank, textBank, getImageForKey, getTextForKey,
     setTextForKey, getTextStyleForKey,
+    setElementLayout, elementLayouts,
     DEVICE_CONFIG, SCREEN_PRESETS, currentPreset
 } from './state.js';
+
 
 import { 
     getCanvas, renderLayout, updateCanvasSize, 
@@ -14,8 +16,9 @@ import {
 } from './canvas-core.js';
 import { 
     syncAndRenderActiveDevice, addTextElement, 
-    addAwardBadge, createShape, add3DDeviceElement 
+    addAwardBadge, createShape, add3DDeviceElement, addImageBankElement
 } from './elements-manager.js';
+
 import { 
     renderImageBankUI, renderTextBankUI, updateKeySelects, 
     updateTextKeySelects, renderLanguageSelector, 
@@ -67,9 +70,26 @@ export function initUI() {
     });
 
     // Auto-save hooks
-    canvas.on('object:modified', triggerAutoSave);
-    canvas.on('object:added', triggerAutoSave);
+    // ── object:modified → save per-language layout for keyed elements ────
+    canvas.on('object:modified', (e) => {
+        const obj = e.target;
+        if (obj && obj.isDesignElement) {
+            const key = obj.textKey || obj.imageKey;
+            if (key) {
+                setElementLayout(key, currentLanguage, {
+                    left:   obj.left,
+                    top:    obj.top,
+                    scaleX: obj.scaleX,
+                    scaleY: obj.scaleY,
+                    angle:  obj.angle
+                });
+            }
+        }
+        triggerAutoSave();
+    });
+    canvas.on('object:added',   triggerAutoSave);
     canvas.on('object:removed', triggerAutoSave);
+
 
     // Device Studio
     document.getElementById('deviceModelSelect')?.addEventListener('change', (e) => loadLocal3DModel(e.target.value));
@@ -89,20 +109,51 @@ export function initUI() {
     document.getElementById('addLineBtn')?.addEventListener('click', () => createShape('line'));
     document.getElementById('addArrowBtn')?.addEventListener('click', () => createShape('arrow'));
 
+
+    // \u2500\u2500 Image Bank Picker \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+    function openImageBankPicker() {
+        const picker = document.getElementById('imageBankPicker');
+        const list   = document.getElementById('imageBankPickerList');
+        if (!picker || !list) return;
+        const keys = Object.keys(imageBank);
+        if (keys.length === 0) {
+            list.innerHTML = '<p class="text-[10px] text-slate-400 italic text-center py-2">No images in bank yet. Upload one below.</p>';
+        } else {
+            list.innerHTML = keys.map(k => {
+                const src = imageBank[k][currentLanguage] || imageBank[k][Object.keys(imageBank[k])[0]] || '';
+                return `<button data-key="${k}" class="image-picker-key flex items-center gap-2 p-1.5 rounded-lg bg-white border border-indigo-200 hover:bg-indigo-100 text-left w-full transition-colors">
+                    ${src ? `<img src="${src}" class="w-8 h-8 object-cover rounded-md border border-slate-200 shrink-0">` : '<div class="w-8 h-8 bg-slate-200 rounded-md shrink-0 flex items-center justify-center text-slate-400 text-xs">?</div>'}
+                    <span class="text-xs font-medium text-slate-700 truncate">${k}</span>
+                </button>`;
+            }).join('');
+            list.querySelectorAll('.image-picker-key').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    addImageBankElement(btn.dataset.key);
+                    picker.classList.add('hidden');
+                });
+            });
+        }
+        picker.classList.toggle('hidden');
+    }
+
+    document.getElementById('addFreeImageBtn')?.addEventListener('click', openImageBankPicker);
+    document.getElementById('imageBankPickerClose')?.addEventListener('click', () => {
+        document.getElementById('imageBankPicker')?.classList.add('hidden');
+    });
+
+    // Upload new image \u2192 auto-creates an image bank key and inserts it
     document.getElementById('freeImageInput')?.addEventListener('change', function() {
         var file = this.files[0]; if (!file) return;
         var reader = new FileReader();
         reader.onload = (ev) => {
-            fabric.Image.fromURL(ev.target.result, (img) => {
-                var scale = Math.min(300 / img.width, 500 / img.height, 1);
-                img.set({
-                    left: canvas.width / 2 - (img.width * scale) / 2, top: 150,
-                    scaleX: scale, scaleY: scale, isDesignElement: true, isFreeImage: true,
-                    clipPath: getCanvas().clipPath, borderColor: '#6366f1', cornerColor: '#6366f1',
-                    cornerStyle: 'circle', cornerSize: 10, transparentCorners: false, padding: 4
-                });
-                canvas.add(img); canvas.setActiveObject(img); renderLayout();
-            });
+            // Create a new key from the filename
+            var rawKey = file.name.replace(/\.[^.]+$/, '').toLowerCase().replace(/[^a-z0-9_]/g, '_').slice(0, 40);
+            var key = rawKey || ('img_' + Date.now());
+            if (!imageBank[key]) imageBank[key] = {};
+            imageBank[key][currentLanguage] = ev.target.result;
+            updateKeySelects();
+            addImageBankElement(key);
+            document.getElementById('imageBankPicker')?.classList.add('hidden');
         };
         reader.readAsDataURL(file);
         this.value = '';

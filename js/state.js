@@ -4,6 +4,7 @@
 
 export let imageBank = {};        // { "key_name": { "en": "data:...", "es": "data:..." } }
 export let textBank = {};         // { "key_name": { "en": "Hello", "es": "Hola" } }
+export let elementLayouts = {};   // { "key_name": { "en": { left, top, scaleX, scaleY, angle }, "es": {...} } }
 export let currentLanguage = 'en';
 export let languages = ['en'];
 export let screensData = [{ id: 'screen_1', color: '#ffffff', obj: null }];
@@ -110,6 +111,24 @@ export function setTextForKey(key, lang, value, styles = {}) {
 
 export function setCurrentLanguage(lang) {
     currentLanguage = lang;
+}
+
+/** Save position/scale/angle of a keyed element for a specific language */
+export function setElementLayout(key, lang, transform) {
+    if (!key) return;
+    if (!elementLayouts[key]) elementLayouts[key] = {};
+    elementLayouts[key][lang] = { ...transform };
+}
+
+/** Get saved transform for a keyed element in a language. Returns null if none saved. */
+export function getElementLayout(key, lang) {
+    if (!key || !elementLayouts[key] || !elementLayouts[key][lang]) return null;
+    return elementLayouts[key][lang];
+}
+
+/** Bulk-replace all layouts (used during project import) */
+export function setElementLayouts(layouts) {
+    elementLayouts = layouts || {};
 }
 
 export function setLanguages(langs) {
